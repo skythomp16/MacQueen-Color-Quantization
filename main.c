@@ -133,22 +133,6 @@ void writePPM(const char *filename, PPMImage *img)
 
 void colorQuantizationPPM(PPMImage *img, int numColors)
 {
-    //Taking all of the red out of red pixels, all of the green out of green pixels, and all of the blue out of blue pixels -- for testing purposes
-    /*
-    int i;
-    if (img) {
-
-        for (i = 0; i < img->x*img->y; i++) {
-            img->data[i].red = RGB_COMPONENT_COLOR - img->data[i].red;
-            img->data[i].green = RGB_COMPONENT_COLOR - img->data[i].green;
-            img->data[i].blue = RGB_COMPONENT_COLOR - img->data[i].blue;
-        }
-    }
-    */
-
-    //Random number generator (for selecting random centers)
-    srand(time(0));
-
     //Filling an array with random numbers for number of colors to be quantized down to
     int num[64];
     for (int i = 0; i < 63; i++)
@@ -177,6 +161,8 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
     int diffG;
     int diffR;
     int diffB;
+    int totalRGB = 0;
+    bool first = true;
     PPMCluster cluster;
 
     do {
@@ -184,27 +170,33 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
         randPixNum = rand();
         PPMPixel randPix = img->data[randPixNum];
 
-        //Next, find the closest pixel to this pixel in the centers array (using comparison of rgb values?)
-        for (int i = 0; (i < img->x * img->y); i++) {
+        //Next, find the closest pixel to this pixel in the centers array
+        for (int i = 0; i < terminate; i++) {
             temp = img->data[i];
 
-            diffB = randPix.blue - temp.blue;
-            diffG = randPix.green - temp.green;
-            diffR = randPix.red - temp.red;
+            diffB = (randPix.blue - temp.blue) * (randPix.blue - temp.blue);
+            diffG = (randPix.green - temp.green) * (randPix.green - temp.green);
+            diffR = (randPix.red - temp.red) * (randPix.red - temp.red);
 
-            int totalRGB = diffR + diffG + diffB;
+            int tempTotalRGB = diffR + diffG + diffB;
 
+            if (tempTotalRGB > totalRGB || first)
+            {
+                totalRGB = tempTotalRGB;
+                first = false;
+            }
 
         }
 
-        //Update the center in the centers array (how?)
+        //Update the center in the centers array ci = (Nici + xr)/(Ni + 1)
+        centers[index] = () / (cluster.size + 1)
 
         //Increment cluster size (Ni) by 1
         cluster.size += 1;
 
         //Implement the loop by 1;
         index++;
-    } while (index < terminate); //Terminate when all pixels have been gone through (or enough to satisfy)
+    } while (index < sizeof(centers)); //Terminate when all pixels in the center array have been gone through
 
 }
 
@@ -214,6 +206,9 @@ int main() {
     //Create a new image object and read the image in
     PPMImage *image;
     image = readPPM("4.2.03.ppm");
+
+    //Random number generator (for selecting random centers)
+    srand(time(0));
 
     //Run color quantization on the image
     colorQuantizationPPM(image, 64);
