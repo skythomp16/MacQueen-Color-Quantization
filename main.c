@@ -162,7 +162,7 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
     int diffR;
     int diffB;
     int totalRGB = 0;
-    bool first = true;
+    int first = 1;
     PPMCluster cluster;
 
     do {
@@ -183,13 +183,13 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
             if (tempTotalRGB > totalRGB || first)
             {
                 totalRGB = tempTotalRGB;
-                first = false;
+                first = 0;
             }
 
         }
 
-        //Update the center in the centers array ci = (Nici + xr)/(Ni + 1)
-        centers[index] = () / (cluster.size + 1)
+        //Update the center in the centers array ci = (Ni ci + xr)/(Ni + 1)
+        
 
         //Increment cluster size (Ni) by 1
         cluster.size += 1;
@@ -205,7 +205,7 @@ int main() {
 
     //Create a new image object and read the image in
     PPMImage *image;
-    image = readPPM("4.2.03.ppm");
+    image = readPPM("sample.ppm");
 
     //Random number generator (for selecting random centers)
     srand(time(0));
@@ -214,7 +214,7 @@ int main() {
     colorQuantizationPPM(image, 64);
 
     //Create a new image based on the color quantization
-    writePPM("quantized.ppm", image);
+    writePPM("new.ppm", image);
 
     //Wait for user response
     printf("Press any key...");
