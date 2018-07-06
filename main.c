@@ -3,8 +3,9 @@
 #include <time.h>
 
 //Structures for each individual pixel
+// red, green, blue should be of type 'double'
 typedef struct {
-    unsigned char red, green, blue;
+    double red, green, blue;
 } PPMPixel;
 
 //Structure for cluster
@@ -15,7 +16,7 @@ typedef struct {
 
 //Image structure
 typedef struct {
-    int x, y;  //Included for rebuilding the image
+    unsigned int x, y;  //Included for rebuilding the image
     PPMPixel *data;
 } PPMImage;
 
@@ -66,7 +67,7 @@ static PPMImage *readPPM(const char *filename)
     ungetc(c, fp);
 
     //read image size information
-    if (fscanf(fp, "%d %d", &img->x, &img->y) != 2) {
+    if (fscanf(fp, "%u %u", &img->x, &img->y) != 2) {
         fprintf(stderr, "Invalid image size (error loading '%s')\n", filename);
         exit(1);
     }
@@ -134,69 +135,75 @@ void writePPM(const char *filename, PPMImage *img)
 void colorQuantizationPPM(PPMImage *img, int numColors)
 {
     //Filling an array with random numbers for number of colors to be quantized down to
-    int num[64];
-    for (int i = 0; i < 63; i++)
-    {
-        //Format (rand() % (upper - lower + 1)) + lower.  In this case lower is 1 and upper is all pixels in the image
-        num[i] = (rand() % ((img->x * img->y) - 1 + 1)) + 1;
-    }
+    int numFixedColors = 64;
 
-    //Randomly pick centroid points and place them in an array of centers
-    PPMPixel *centers = malloc(sizeof(centers) * 64);
+    //Make an array of clusters to coorespond with the array of centers
+    PPMCluster *clusters = (PPMCluster *) malloc(numFixedColors * sizeof(PPMCluster));
 
-    for (int i = 0; i < 63; i++)
+    //Variable to indicate the number of pixels in the image
+    int numPixels = (img->x * img->y);
+
+
+    for (int i = 0; i < numFixedColors; i++)
     {
-        centers[i] = img->data[num[i]];
-        printf("%d", centers[i].red);
-        printf("\n");
+        PPMPixel myTemp = img->data[rand() % (numPixels) + 1];
+        clusters[i].center = myTemp;
     }
 
     //Now time for data clustering using k-means
     //First, Some variables
-    int terminate = (img->x * img->y); //terminates after going through every pixel in the image
+    int terminate = numPixels; //terminates after going through every pixel in the image
     int randPixNum;
     int index = 0;
     PPMPixel closest;
-    PPMPixel temp;
+    PPMCluster temp;
     int diffG;
     int diffR;
     int diffB;
     int totalRGB = 0;
-    int first = 1;
-    PPMCluster cluster;
+    int nearest;
 
-    do {
-        //Now, select a random pixel from the pixel array
+    //Terminate when all pixels in the center array have been gone through
+    for ( index = 0; index < terminate; index++ )
+     {
+        //Now, select a random pixel from the pixel array 
         randPixNum = rand();
         PPMPixel randPix = img->data[randPixNum];
 
         //Next, find the closest pixel to this pixel in the centers array
-        for (int i = 0; i < terminate; i++) {
-            temp = img->data[i];
+	    totalRGB = 195075; // 3 * 255 * 255 
+        for (int i = 0; i < numFixedColors; i++) {
+            temp = clusters[i];
 
-            diffB = (randPix.blue - temp.blue) * (randPix.blue - temp.blue);
-            diffG = (randPix.green - temp.green) * (randPix.green - temp.green);
-            diffR = (randPix.red - temp.red) * (randPix.red - temp.red);
+            diffB = (randPix.blue - temp.center.blue) * (randPix.blue - temp.center.blue);
+            diffG = (randPix.green - temp.center.green) * (randPix.green - temp.center.green);
+            diffR = (randPix.red - temp.center.red) * (randPix.red - temp.center.red);
+            
+	    double tempTotalRGB = diffR + diffG + diffB;
 
-            int tempTotalRGB = diffR + diffG + diffB;
-
-            if (tempTotalRGB > totalRGB || first)
+            if (tempTotalRGB < totalRGB)
             {
                 totalRGB = tempTotalRGB;
-                first = 0;
+		        nearest = i;
             }
-
         }
 
         //Update the center in the centers array ci = (Ni ci + xr)/(Ni + 1)
-        
+	// NEW
+	// old_size = fetch the current size of cluster i
+	// new_size = old_size + 1;
+	// center[i].red = ( old_size * center[i].red + randPix.red ) / ( double ) new_size;
+	// center[i].green = ( old_size * center[i].green + randPix.green ) / ( double ) new_size;
+	// center[i].blue = ( old_size * center[i].blue + randPix.blue ) / ( double ) new_size;
+	// update size of cluster i as new_size
 
-        //Increment cluster size (Ni) by 1
-        cluster.size += 1;
-
-        //Implement the loop by 1;
-        index++;
-    } while (index < sizeof(centers)); //Terminate when all pixels in the center array have been gone through
+    int old_size = clusters[index].size;
+    int new_size = old_size + 1;
+    clusters[index].center.red = ( old_size * clusters[index].center.red + randPix.red ) / ( double ) new_size;
+    clusters[index].center.green = ( old_size * clusters[index].center.green + randPix.green ) / ( double ) new_size;
+    clusters[index].center.blue = ( old_size * clusters[index].center.blue + randPix.blue ) / ( double ) new_size;
+    clusters[index].size = new_size;
+    } 
 
 }
 
