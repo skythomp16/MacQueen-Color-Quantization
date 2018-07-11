@@ -166,6 +166,9 @@ void macqueenClustering(PPMImage *img, int numColors)
     int diffB;
     int totalRGB = 0;
     int nearest;
+    double tempTotalRGB;
+
+    int counter = 0;
 
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++ )
@@ -177,7 +180,6 @@ void macqueenClustering(PPMImage *img, int numColors)
         //Set totalRGB to be the highest it can be
         totalRGB = 195075; // 3 * 255 * 255 
 
-        //WARNING -- Something wrong below
         //Next, find the closest pixel to this pixel in the centers array
         for (int i = 0; i < numFixedColors; i++) {
             temp = clusters[i];
@@ -186,12 +188,19 @@ void macqueenClustering(PPMImage *img, int numColors)
             diffG = (randPix.green - temp.center.green) * (randPix.green - temp.center.green);
             diffR = (randPix.red - temp.center.red) * (randPix.red - temp.center.red);
             
-	        double tempTotalRGB = diffR + diffG + diffB;
+	        tempTotalRGB = diffR + diffG + diffB;
 
             if (tempTotalRGB < totalRGB)
             {
                 totalRGB = tempTotalRGB;
 		        nearest = i;
+                /* TESTING BELOW
+                printf("I entered this function!   ");
+                counter++;
+                printf("%d", );
+                printf("   ");
+                printf("%d\n", counter);
+                */
             }
         
         }
