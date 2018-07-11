@@ -153,7 +153,6 @@ void macqueenClustering(PPMImage *img, int numColors)
         clusters[i].center = myTemp;
         clusters[i].size = 1;
     }
-    int size = numFixedColors * sizeof(*clusters);
 
     //Now time for data clustering using k-means
     //First, Some variables
@@ -205,6 +204,13 @@ void macqueenClustering(PPMImage *img, int numColors)
             clusters[nearest].center.blue = ( old_size * clusters[nearest].center.blue + randPix.blue ) / (double) new_size;
             clusters[nearest].size = new_size;
     } 
+
+    //For testing purposes to see the size of each of the 64 data clusters
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        int size = clusters[i].size;
+        printf("%d\n", size);
+    }
 }
 
 //Main function
