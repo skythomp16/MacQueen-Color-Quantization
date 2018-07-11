@@ -132,7 +132,7 @@ void writePPM(const char *filename, PPMImage *img)
     fclose(fp);
 }
 
-void colorQuantizationPPM(PPMImage *img, int numColors)
+void macqueenClustering(PPMImage *img, int numColors)
 {
     //Filling an array with random numbers for number of colors to be quantized down to
     int numFixedColors = 64;
@@ -146,17 +146,18 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
     //Variable to indicate the number of pixels in the image
     int numPixels = (img->width * img->height);
 
+    //Initialize each center to a random value and give each cluster a size of 1
     for (int i = 0; i < numFixedColors; i++)
     {
-        PPMPixel myTemp = img->data[rand() % (numPixels) + 1];
+        PPMPixel myTemp = img->data[rand() % (numPixels)];
         clusters[i].center = myTemp;
         clusters[i].size = 1;
     }
-
+    int size = numFixedColors * sizeof(*clusters);
 
     //Now time for data clustering using k-means
     //First, Some variables
-    int terminate = numFixedColors; //terminates after iterating however many times the colors need to be quantized
+    int terminate = numPixels; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
     PPMPixel closest;
@@ -167,15 +168,18 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
     int totalRGB = 0;
     int nearest;
 
-    //Terminate when all pixels in the center array have been gone through
-    for (index = 0; index < numFixedColors; index++ )
+    //Terminate when criteria is met
+    for (index = 0; index < terminate; index++ )
      {
-        //Now, select a random pixel from the pixel array 
+        //Now, select a random pixel from the pixel array (pick a random pixel from the image)
         randPixNum = rand();
         PPMPixel randPix = img->data[randPixNum];
 
+        //Set totalRGB to be the highest it can be
+        totalRGB = 195075; // 3 * 255 * 255 
+
+        //WARNING -- Something wrong below
         //Next, find the closest pixel to this pixel in the centers array
-	    totalRGB = 195075; // 3 * 255 * 255 
         for (int i = 0; i < numFixedColors; i++) {
             temp = clusters[i];
 
@@ -193,26 +197,13 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
         
         }
         //Update the center in the centers array ci = (Ni ci + xr)/(Ni + 1)
-        /* Comments from Dr. Celebi
-            // NEW
-            // old_size = fetch the current size of cluster i
-            // new_size = old_size + 1;
-            // center[i].red = ( old_size * center[i].red + randPix.red ) / ( double ) new_size;
-            // center[i].green = ( old_size * center[i].green + randPix.green ) / ( double ) new_size;
-            // center[i].blue = ( old_size * center[i].blue + randPix.blue ) / ( double ) new_size;
-            // update size of cluster i as new_size
-        */
-            printf("%d\n", clusters[index].size);
-
-            int old_size = clusters[index].size;
+            int old_size = clusters[nearest].size;
             int new_size = old_size + 1;
 
-            clusters[index].center.red = ( old_size * clusters[index].center.red + randPix.red ) / (double) new_size;
-            clusters[index].center.green = ( old_size * clusters[index].center.green + randPix.green ) / (double) new_size;
-            clusters[index].center.blue = ( old_size * clusters[index].center.blue + randPix.blue ) / (double) new_size;
-            
+            clusters[nearest].center.red = ( old_size * clusters[nearest].center.red + randPix.red ) / (double) new_size;
+            clusters[nearest].center.green = ( old_size * clusters[nearest].center.green + randPix.green ) / (double) new_size;
+            clusters[nearest].center.blue = ( old_size * clusters[nearest].center.blue + randPix.blue ) / (double) new_size;
             clusters[nearest].size = new_size;
-    
     } 
 }
 
@@ -222,8 +213,8 @@ int main() {
     PPMImage *image;
     image = readPPM("sample.ppm");
 
-    //Run color quantization on the image
-    colorQuantizationPPM(image, 64);
+    //Organize the pixels into clusters
+    macqueenClustering(image, 64);
 
     //Create a new image based on the color quantization
     writePPM("new.ppm", image);

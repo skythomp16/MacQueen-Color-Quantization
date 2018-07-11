@@ -10,3 +10,13 @@
         }
     }
     */
+
+           /* Comments from Dr. Celebi
+            // NEW
+            // old_size = fetch the current size of cluster i
+            // new_size = old_size + 1;
+            // center[i].red = ( old_size * center[i].red + randPix.red ) / ( double ) new_size;
+            // center[i].green = ( old_size * center[i].green + randPix.green ) / ( double ) new_size;
+            // center[i].blue = ( old_size * center[i].blue + randPix.blue ) / ( double ) new_size;
+            // update size of cluster i as new_size
+        */
