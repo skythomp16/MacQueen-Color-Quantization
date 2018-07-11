@@ -191,7 +191,7 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
 		        nearest = i;
             }
         
-
+        }
         //Update the center in the centers array ci = (Ni ci + xr)/(Ni + 1)
         /* Comments from Dr. Celebi
             // NEW
@@ -212,7 +212,6 @@ void colorQuantizationPPM(PPMImage *img, int numColors)
             clusters[index].center.blue = ( old_size * clusters[index].center.blue + randPix.blue ) / (double) new_size;
             
             clusters[nearest].size = new_size;
-        }
     
     } 
 }
