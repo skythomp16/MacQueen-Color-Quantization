@@ -226,7 +226,7 @@ void macqueenClustering(PPMImage *img, int numColors)
 int main() {
     //Create a new image object and read the image in
     PPMImage *image;
-    image = readPPM("sample.ppm");
+    image = readPPM("toy.ppm");
 
     //Organize the pixels into clusters
     macqueenClustering(image, 64);
