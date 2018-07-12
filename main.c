@@ -134,6 +134,17 @@ void writePPM(const char *filename, PPMImage *img)
 
 void macqueenClustering(PPMImage *img, int numColors)
 {
+        int i;
+    if (img) {
+
+        for (i = 0; i < img->width * img->height; i++) {
+            img->data[i].red = 0;
+            img->data[i].green = 0;
+            img->data[i].blue = 0;
+        }
+    }
+
+    /*  Commented for testing purposes
     //Filling an array with random numbers for number of colors to be quantized down to
     int numFixedColors = 64;
 
@@ -200,7 +211,7 @@ void macqueenClustering(PPMImage *img, int numColors)
                 printf("%d", );
                 printf("   ");
                 printf("%d\n", counter);
-                */
+                // HEADS UP -- put end comment back here
             }
         
         }
@@ -211,7 +222,7 @@ void macqueenClustering(PPMImage *img, int numColors)
             clusters[nearest].center.red = ( old_size * clusters[nearest].center.red + randPix.red ) / (double) new_size;
             clusters[nearest].center.green = ( old_size * clusters[nearest].center.green + randPix.green ) / (double) new_size;
             clusters[nearest].center.blue = ( old_size * clusters[nearest].center.blue + randPix.blue ) / (double) new_size;
-            clusters[nearest].size = new_size;
+            clusters[nearest].size = new_size;      
     } 
 
     //For testing purposes to see the size of each of the 64 data clusters
@@ -220,13 +231,15 @@ void macqueenClustering(PPMImage *img, int numColors)
         int size = clusters[i].size;
         printf("%d\n", size);
     }
+
+    */
 }
 
 //Main function
 int main() {
     //Create a new image object and read the image in
     PPMImage *image;
-    image = readPPM("toy.ppm");
+    image = readPPM("sample.ppm");
 
     //Organize the pixels into clusters
     macqueenClustering(image, 64);
