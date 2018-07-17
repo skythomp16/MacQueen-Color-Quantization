@@ -5,7 +5,7 @@
 //Structures for each individual pixel
 // red, green, blue should be of type 'double'
 typedef struct {
-    double red, green, blue;
+    char red, green, blue;
 } PPMPixel;
 
 //Structure for cluster
@@ -134,17 +134,6 @@ void writePPM(const char *filename, PPMImage *img)
 
 void macqueenClustering(PPMImage *img, int numColors)
 {
-        int i;
-    if (img) {
-
-        for (i = 0; i < img->width * img->height; i++) {
-            img->data[i].red = 0;
-            img->data[i].green = 0;
-            img->data[i].blue = 0;
-        }
-    }
-
-    /*  Commented for testing purposes
     //Filling an array with random numbers for number of colors to be quantized down to
     int numFixedColors = 64;
 
@@ -205,13 +194,13 @@ void macqueenClustering(PPMImage *img, int numColors)
             {
                 totalRGB = tempTotalRGB;
 		        nearest = i;
-                /* TESTING BELOW
+                /*
                 printf("I entered this function!   ");
                 counter++;
-                printf("%d", );
+                printf("%d", randPix.blue);
                 printf("   ");
                 printf("%d\n", counter);
-                // HEADS UP -- put end comment back here
+                */
             }
         
         }
@@ -225,14 +214,26 @@ void macqueenClustering(PPMImage *img, int numColors)
             clusters[nearest].size = new_size;      
     } 
 
+
     //For testing purposes to see the size of each of the 64 data clusters
+    counter = 1;
+    int totalSize = 0;
     for (int i = 0; i < numFixedColors; i++)
     {
         int size = clusters[i].size;
-        printf("%d\n", size);
+        totalSize += size;
+        printf("%d", counter);
+        printf("     ");
+        counter++;
+        printf("%d", size);
+        printf("     ");
+        printf("%d\n", totalSize);
     }
 
-    */
+    //Now quantize the image
+
+
+    
 }
 
 //Main function
