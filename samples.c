@@ -20,3 +20,30 @@
             // center[i].blue = ( old_size * center[i].blue + randPix.blue ) / ( double ) new_size;
             // update size of cluster i as new_size
         */
+
+
+       /*
+    //For testing purposes to see the size of each of the 64 data clusters
+    counter = 1;
+    int totalSize = 0;
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        int size = clusters[i].size;
+        totalSize += size;
+        printf("%d", counter);
+        printf("     ");
+        counter++;
+        printf("%d", size);
+        printf("     ");
+        printf("%d\n", totalSize);
+    }
+*/
+
+                /*
+                printf("I entered this function!   ");
+                counter++;
+                printf("%d", randPix.blue);
+                printf("   ");
+                printf("%d\n", counter);
+                */
+
