@@ -4,7 +4,7 @@
 
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
-    unsigned char red, green, blue;
+    double red, green, blue;
 } PPMPixel;
 
 //Structure for cluster
@@ -19,7 +19,7 @@ typedef struct {
     PPMPixel *data;
 } PPMImage;
 
-#define CREATOR "RPFELGUEIRAS"
+#define CREATOR "Rewritten by Skyler Thompson"
 #define RGB_COMPONENT_COLOR 255
 
 //Funcion that will read image information in
@@ -96,7 +96,7 @@ static PPMImage *readPPM(const char *filename)
     //read pixel data from file
     unsigned char *inBuf = malloc(sizeof(unsigned char));
     int i = 0;
-    int conv;
+    double conv;
     int imgSize = (img->height * img->width);
     //While there are still pixels left
     while(fread(inBuf, 1, 1, fp) && i < imgSize)
@@ -112,7 +112,17 @@ static PPMImage *readPPM(const char *filename)
         img->data[i].blue = conv;
         i++;
     }
-
+/*
+    for (int j = 0; j < img->height * img->width; j++)
+    {
+    printf("%f", img->data[j].red);
+    printf("    ");
+    printf("%f", img->data[j].green);
+    printf("    ");
+    printf("%f", img->data[j].blue);
+    printf("\n");
+    }
+    */
     fclose(fp);
     return img;
 }
@@ -141,8 +151,25 @@ void writePPM(const char *filename, PPMImage *img)
     // rgb component depth
     fprintf(fp, "%d\n", RGB_COMPONENT_COLOR);
 
+/*
     // pixel data
     fwrite(img->data, 3 * img->width, img->height, fp);
+    */
+
+    int i = 0; 
+    int length = (img->height * img->width);
+
+    while (i < length)
+    {
+        unsigned char r = (unsigned char)(img->data[i].red);
+        unsigned char g = (unsigned char)(img->data[i].green);
+        unsigned char b = (unsigned char)(img->data[i].blue);
+
+        fwrite(&r, sizeof(unsigned char), 1, fp);
+        fwrite(&g, sizeof(unsigned char), 1, fp);
+        fwrite(&b, sizeof(unsigned char), 1, fp);
+        i++;
+    }
     fclose(fp);
 }
 
@@ -181,7 +208,6 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int totalRGB = 0;
     int nearest;
     int tempTotalRGB;
-
     int counter = 0;
 
     //Terminate when criteria is met
@@ -225,38 +251,43 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //For testing purposes -- prints the rgb values of each center
     for (int i = 0; i < numFixedColors; i++)
     {
-        printf("%d", clusters[i].center.red);
+        printf("%f", clusters[i].center.red);
         printf("     ");
-        printf("%d", clusters[i].center.green);
+        printf("%f", clusters[i].center.green);
         printf("     ");
-        printf("%d\n", clusters[i].center.blue);
+        printf("%f\n", clusters[i].center.blue);
     }
+
 
     //Now quantize the image
     for (int i = 0; i < terminate; i++)
     {
-        //Loop through every cluster and identify pixels closest to center and make them the same color
-        for (int j = 0; j < numFixedColors; j++)
+        totalRGB = 195075;
+        
+        for (int j = 0; j < numFixedColors; j++) 
         {
+            
             diffB = (img->data[i].blue - clusters[j].center.blue) * (img->data[i].blue - clusters[j].center.blue);
             diffG = (img->data[i].green - clusters[j].center.green) * (img->data[i].green - clusters[j].center.green);
             diffR = (img->data[i].red - clusters[j].center.red) * (img->data[i].red - clusters[j].center.red);
             
-	        tempTotalRGB = diffR + diffG + diffB;
+            tempTotalRGB = diffR + diffG + diffB;
 
             if (tempTotalRGB < totalRGB)
             {
                 totalRGB = tempTotalRGB;
-		        nearest = j;
+                nearest = j;
             } 
+            
         }
 
-        img->data[i].blue = clusters[nearest].center.blue;
         img->data[i].red = clusters[nearest].center.red;
         img->data[i].green = clusters[nearest].center.green;
+        img->data[i].blue = clusters[nearest].center.blue;
         
     }
 
+    //Finally, return the quantized image object to main
     return img;
 }
 
