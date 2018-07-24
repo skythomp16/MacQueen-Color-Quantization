@@ -94,9 +94,23 @@ static PPMImage *readPPM(const char *filename)
     }
 
     //read pixel data from file
-    if (fread(img->data, 3 * img->width, img->height, fp) != img->height) {
-        fprintf(stderr, "Error loading image '%s'\n", filename);
-        exit(1);
+    unsigned char *inBuf = malloc(sizeof(unsigned char));
+    int i = 0;
+    int conv;
+    int imgSize = (img->height * img->width);
+    //While there are still pixels left
+    while(fread(inBuf, 1, 1, fp) && i < imgSize)
+    {
+        //Read in pixels using buffer
+        conv = *inBuf;
+        img->data[i].red = conv;
+        fread(inBuf, 1, 1, fp);
+        conv = *inBuf;
+        img->data[i].green = conv;
+        fread(inBuf, 1, 1, fp);
+        conv = *inBuf;
+        img->data[i].blue = conv;
+        i++;
     }
 
     fclose(fp);
@@ -135,7 +149,7 @@ void writePPM(const char *filename, PPMImage *img)
 PPMImage* macqueenClustering(PPMImage *img, int numColors)
 {
     //Filling an array with random numbers for number of colors to be quantized down to
-    int numFixedColors = 32;
+    int numFixedColors = 64;
 
     //Random number generator (for selecting random centers)
     srand(time(0));
@@ -166,7 +180,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int diffB;
     int totalRGB = 0;
     int nearest;
-    double tempTotalRGB;
+    int tempTotalRGB;
 
     int counter = 0;
 
@@ -202,45 +216,45 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             int new_size = old_size + 1;
             
             clusters[nearest].center.red = ( old_size * clusters[nearest].center.red + randPix.red ) / (double) new_size;
-            clusters[nearest].center.green = ( old_size * clusters[nearest].center.green + randPix.green ) / (double) new_size;
-            clusters[nearest].center.blue = ( old_size * clusters[nearest].center.blue + randPix.blue ) / (double) new_size;
+            clusters[nearest].center.green = (old_size * clusters[nearest].center.green + randPix.green ) / (double) new_size;
+            clusters[nearest].center.blue = (old_size * clusters[nearest].center.blue + randPix.blue ) / (double) new_size;
 
             clusters[nearest].size = new_size;      
     } 
 
-int term = 1;
-    //Now quantize the image
-    for (int i = 0; i < numPixels; i++)
+    //For testing purposes -- prints the rgb values of each center
+    for (int i = 0; i < numFixedColors; i++)
     {
-        //Assign a pointer variable to reference original pixel in data cluster (to be sure to alter original image in memory)
-        PPMPixel temp = img->data[i];
+        printf("%d", clusters[i].center.red);
+        printf("     ");
+        printf("%d", clusters[i].center.green);
+        printf("     ");
+        printf("%d\n", clusters[i].center.blue);
+    }
 
+    //Now quantize the image
+    for (int i = 0; i < terminate; i++)
+    {
         //Loop through every cluster and identify pixels closest to center and make them the same color
         for (int j = 0; j < numFixedColors; j++)
         {
-            diffB = (temp.blue - clusters[j].center.blue) * (temp.blue - clusters[j].center.blue);
-            diffG = (temp.green - clusters[j].center.green) * (temp.green - clusters[j].center.green);
-            diffR = (temp.red - clusters[j].center.red) * (temp.red - clusters[j].center.red);
-
-            if (term == 1)
-            {
-            printf("%d", clusters[j].center.blue);
-            printf("\n");
-            }
+            diffB = (img->data[i].blue - clusters[j].center.blue) * (img->data[i].blue - clusters[j].center.blue);
+            diffG = (img->data[i].green - clusters[j].center.green) * (img->data[i].green - clusters[j].center.green);
+            diffR = (img->data[i].red - clusters[j].center.red) * (img->data[i].red - clusters[j].center.red);
             
 	        tempTotalRGB = diffR + diffG + diffB;
 
             if (tempTotalRGB < totalRGB)
             {
                 totalRGB = tempTotalRGB;
-		        nearest = i;
+		        nearest = j;
             } 
         }
-        term = 0;
 
         img->data[i].blue = clusters[nearest].center.blue;
         img->data[i].red = clusters[nearest].center.red;
         img->data[i].green = clusters[nearest].center.green;
+        
     }
 
     return img;

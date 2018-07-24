@@ -47,3 +47,20 @@
                 printf("%d\n", counter);
                 */
 
+/*
+for (int i = 0; i < img->height * img->width; i++)
+{
+    printf("%d", (int)img->data[i].red);
+    //printf("    ");
+    printf("%d", (int)img->data[i].green);
+    //printf("    ");
+    printf("%d", (int)img->data[i].blue);
+    printf("\n");
+}
+*/
+
+for (int i = 0; i < img->height * img->width; i++)
+{
+    printf("%d", (int)pix[i]);
+    printf("\n");
+}s
