@@ -248,16 +248,12 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             clusters[nearest].size = new_size;      
     } 
 
-    //For testing purposes -- prints the rgb values of each center
-    for (int i = 0; i < numFixedColors; i++)
-    {
-        printf("%f", clusters[i].center.red);
-        printf("     ");
-        printf("%f", clusters[i].center.green);
-        printf("     ");
-        printf("%f\n", clusters[i].center.blue);
-    }
-
+    //Create new image object
+    PPMImage *imag;
+    imag = (PPMImage *)malloc(sizeof(PPMImage));
+    imag->data = (PPMPixel*)malloc(img->width * img->height * sizeof(PPMPixel));
+    imag->width = img->width;
+    imag->height = img->height;
 
     //Now quantize the image
     for (int i = 0; i < terminate; i++)
@@ -281,14 +277,52 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             
         }
 
-        img->data[i].red = clusters[nearest].center.red;
-        img->data[i].green = clusters[nearest].center.green;
-        img->data[i].blue = clusters[nearest].center.blue;
+        imag->data[i].red = clusters[nearest].center.red;
+        imag->data[i].green = clusters[nearest].center.green;
+        imag->data[i].blue = clusters[nearest].center.blue;
         
     }
 
     //Finally, return the quantized image object to main
-    return img;
+    return imag;
+}
+
+double computeError(PPMImage *image1, PPMImage *image2)
+{
+    //First some variables
+    int i = 0;
+    double err;
+    double diffR;
+    double diffG;
+    double diffB;
+    double total = 0;
+    int size = image1->width * image1->height;
+
+    //Now loop through every pixel in both images and save the difference for pixel values
+    while (i < size)
+    {
+        //First take differences
+        diffR = image1->data[i].red - image2->data[i].red;
+        diffG = image1->data[i].green - image2->data[i].green;
+        diffB = image1->data[i].blue - image2->data[i].blue;
+
+        //Now square those numbers (which will also turn all negatives into positives)
+        diffR = diffR * diffR;
+        diffG = diffG * diffG;
+        diffB = diffB * diffB;
+
+        //Add these up into a total variable
+        total += (diffR + diffG + diffB);
+
+        //Increment i
+        i++;
+    }
+
+    //Computer Mean Squared Error by dividing total by size
+    err = total / size;
+
+    //Now return the error to main
+    return err;
 }
 
 //Main function
@@ -298,11 +332,22 @@ int main() {
     image = readPPM("sample.ppm");
 
     //Organize the pixels into clusters
-    image = macqueenClustering(image, 64);
+    PPMImage *image2;
+    image2 = macqueenClustering(image, 64);
 
     //Create a new image based on the color quantization
-    writePPM("new.ppm", image);
+    writePPM("new.ppm", image2);
 
+    //Next, compute the Mean Squared Error and print to console
+    double err = computeError(image, image2);
+    printf("%f\n", err);
+
+    //Finally, free up all memory allocated in the program (that hasn't already been freed)
+    free(image->data);
+    free(image2->data);
+    free(image);
+    free(image2);
+    
     //Wait for user response
     printf("Press any key...");
     getchar();

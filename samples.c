@@ -63,4 +63,14 @@ for (int i = 0; i < img->height * img->width; i++)
 {
     printf("%d", (int)pix[i]);
     printf("\n");
-}s
+}
+
+    //For testing purposes -- prints the rgb values of each center
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        printf("%f", clusters[i].center.red);
+        printf("     ");
+        printf("%f", clusters[i].center.green);
+        printf("     ");
+        printf("%f\n", clusters[i].center.blue);
+    }
