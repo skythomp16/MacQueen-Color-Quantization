@@ -287,6 +287,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     return imag;
 }
 
+//Function to compute the Mean Squared Error
 double computeError(PPMImage *image1, PPMImage *image2)
 {
     //First some variables
@@ -318,7 +319,7 @@ double computeError(PPMImage *image1, PPMImage *image2)
         i++;
     }
 
-    //Computer Mean Squared Error by dividing total by size
+    //Compute Mean Squared Error by dividing total by size
     err = total / size;
 
     //Now return the error to main
@@ -329,7 +330,7 @@ double computeError(PPMImage *image1, PPMImage *image2)
 int main() {
     //Create a new image object and read the image in
     PPMImage *image;
-    image = readPPM("sample.ppm");
+    image = readPPM("sample3.ppm");
 
     //Organize the pixels into clusters
     PPMImage *image2;
