@@ -178,11 +178,9 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Filling an array with random numbers for number of colors to be quantized down to
     int numFixedColors = 64;
 
-    //Random number generator (for selecting random centers)
-    srand(time(0));
-
     //Make an array of clusters
     PPMCluster* clusters = malloc(numFixedColors * sizeof(*clusters));
+    //clusters->center = (PPMPixel*)malloc(numFixedColors * sizeof(PPMPixel));
 
     //Variable to indicate the number of pixels in the image
     int numPixels = (img->width * img->height);
@@ -190,14 +188,24 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Initialize each center to a random value and give each cluster a size of 1
     for (int i = 0; i < numFixedColors; i++)
     {
-        PPMPixel myTemp = img->data[rand() % (numPixels)];
-        clusters[i].center = myTemp;
+        //PPMPixel myTemp = img->data[rand() % (numPixels)];
+        //clusters[i].center = myTemp;
+        clusters[i].center.red = img->data[rand() % numPixels].red;
+        clusters[i].center.green = img->data[rand() % numPixels].green;
+        clusters[i].center.blue = img->data[rand() % numPixels].blue;
+
         clusters[i].size = 1;
+    }
+
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        printf("%f\n", clusters[i].center.blue);  //Last value in array is enormous
     }
 
     //Now time for data clustering using k-means
     //First, Some variables
-    int terminate = numPixels; //terminates after iterating over every pixel in the image
+    int numPass = 5;
+    int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
     PPMPixel closest;
@@ -211,10 +219,10 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int counter = 0;
 
     //Terminate when criteria is met
-    for (index = 0; index < terminate; index++ )
+    for (index = 0; index < terminate; index++)
      {
         //Now, select a random pixel from the pixel array (pick a random pixel from the image)
-        randPixNum = rand();
+        randPixNum = rand() % numPixels + 1;
         PPMPixel randPix = img->data[randPixNum];
 
         //Set totalRGB to be the highest it can be
@@ -256,7 +264,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     imag->height = img->height;
 
     //Now quantize the image
-    for (int i = 0; i < terminate; i++)
+    for (int i = 0; i < numPixels; i++)
     {
         totalRGB = 195075;
         
@@ -330,7 +338,10 @@ double computeError(PPMImage *image1, PPMImage *image2)
 int main() {
     //Create a new image object and read the image in
     PPMImage *image;
-    image = readPPM("sample3.ppm");
+    image = readPPM("sample.ppm");
+
+    //Random number generator (for selecting random centers)
+    srand(time(0));
 
     //Organize the pixels into clusters
     PPMImage *image2;

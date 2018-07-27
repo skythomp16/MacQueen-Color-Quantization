@@ -74,3 +74,62 @@ for (int i = 0; i < img->height * img->width; i++)
         printf("     ");
         printf("%f\n", clusters[i].center.blue);
     }
+
+
+   //Initializing clusters
+    //First some variables
+    double total = 0.0;
+    double total2 = 0.0;
+    double s;
+    int j = 0;
+    int ind = 0;
+    int quit = 0;
+
+    //Create an array of cumulative values with the same number of elements as pixels(r + g + b used for this)
+    double *array = malloc(numPixels * sizeof(double));
+
+    for (int i = 0; i < numPixels; i++)
+    {
+        //Adding all rgb values for each pixel
+        s = img->data[i].red + img->data[i].green + img->data[i].blue;
+
+        //Adding these values to the running total
+        total += s;
+
+        //Adding these values to the array
+        array[i] = s;
+    }
+
+    //Now loop through again and create a proportion array using total the the sum of rgb values for each pixel
+    for (int i = 0; i < numPixels; i++)
+    {
+        array[i] = array[i] / total;
+
+        total2 += array[i];
+
+        array[i] = array[i] + total2;
+    }
+
+
+    //Initialize p to a random value between 0 and 1
+    //double p = (double)rand() / (double)RAND_MAX;
+
+    double p = 0.00;
+
+    //loop through cumulative probablility array and pick centroids
+    while (j < numPixels || quit != 1)
+    {
+        if (array[j] >= p)
+        {
+            PPMPixel temp = img->data[j];
+            clusters[ind].center = temp;
+            ind++; 
+            p += 0.01;
+            if(ind == 63)
+            {
+                quit = 1;
+            }
+        }
+
+        j++;
+    }
