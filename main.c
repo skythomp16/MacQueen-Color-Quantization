@@ -190,16 +190,12 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     {
         //PPMPixel myTemp = img->data[rand() % (numPixels)];
         //clusters[i].center = myTemp;
-        clusters[i].center.red = img->data[rand() % numPixels].red;
-        clusters[i].center.green = img->data[rand() % numPixels].green;
-        clusters[i].center.blue = img->data[rand() % numPixels].blue;
+        int randomNumber = rand() % numPixels;
+        clusters[i].center.red = img->data[randomNumber].red;
+        clusters[i].center.green = img->data[randomNumber].green;
+        clusters[i].center.blue = img->data[randomNumber].blue;
 
         clusters[i].size = 1;
-    }
-
-    for (int i = 0; i < numFixedColors; i++)
-    {
-        printf("%f\n", clusters[i].center.blue);  //Last value in array is enormous
     }
 
     //Now time for data clustering using k-means
@@ -338,7 +334,7 @@ double computeError(PPMImage *image1, PPMImage *image2)
 int main() {
     //Create a new image object and read the image in
     PPMImage *image;
-    image = readPPM("sample.ppm");
+    image = readPPM("sample4.ppm");
 
     //Random number generator (for selecting random centers)
     srand(time(NULL));
