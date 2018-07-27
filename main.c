@@ -176,7 +176,7 @@ void writePPM(const char *filename, PPMImage *img)
 PPMImage* macqueenClustering(PPMImage *img, int numColors)
 {
     //Filling an array with random numbers for number of colors to be quantized down to
-    int numFixedColors = 64;
+    int numFixedColors = 256;
 
     //Make an array of clusters
     PPMCluster* clusters = malloc(numFixedColors * sizeof(*clusters));
@@ -341,7 +341,7 @@ int main() {
     image = readPPM("sample.ppm");
 
     //Random number generator (for selecting random centers)
-    srand(time(0));
+    srand(time(NULL));
 
     //Organize the pixels into clusters
     PPMImage *image2;
