@@ -176,7 +176,7 @@ void writePPM(const char *filename, PPMImage *img)
 PPMImage* macqueenClustering(PPMImage *img, int numColors)
 {
     //Filling an array with random numbers for number of colors to be quantized down to
-    int numFixedColors = 256;
+    int numFixedColors = 64;
 
     //Make an array of clusters
     PPMCluster* clusters = malloc(numFixedColors * sizeof(*clusters));
@@ -204,7 +204,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
 
     //Now time for data clustering using k-means
     //First, Some variables
-    int numPass = 5;
+    int numPass = 2;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
