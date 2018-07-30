@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
 
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
@@ -190,7 +189,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     {
         //PPMPixel myTemp = img->data[rand() % (numPixels)];
         //clusters[i].center = myTemp;
-        int randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        int randomNumber = rand() % numPixels;
         clusters[i].center.red = img->data[randomNumber].red;
         clusters[i].center.green = img->data[randomNumber].green;
         clusters[i].center.blue = img->data[randomNumber].blue;
@@ -206,22 +205,22 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int index = 0;
     PPMPixel closest;
     PPMCluster temp;
-    double diffG;
-    double diffR;
-    double diffB;
-    double totalRGB = 0.00;
+    int diffG;
+    int diffR;
+    int diffB;
+    int totalRGB = 0;
     int nearest;
-    double tempTotalRGB;
+    int tempTotalRGB;
     int counter = 0;
 
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
      {
         //Now, select a random pixel from the pixel array (pick a random pixel from the image)
-        randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        randPixNum = rand() % numPixels + 1;
 
         //Set totalRGB to be the highest it can be
-        totalRGB = 195075.00; // 3 * 255 * 255 
+        totalRGB = 195075; // 3 * 255 * 255 
 
         //Next, find the closest pixel to this pixel in the centers array
         for (int i = 0; i < numFixedColors; i++) {
@@ -261,7 +260,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Now quantize the image
     for (int i = 0; i < numPixels; i++)
     {
-        totalRGB = 195075.00;
+        totalRGB = 195075;
         
         for (int j = 0; j < numFixedColors; j++) 
         {
