@@ -99,6 +99,7 @@ static PPMImage *readPPM(const char *filename)
     int i = 0;
     double conv;
     int imgSize = (img->height * img->width);
+    
     //While there are still pixels left
     while(fread(inBuf, 1, 1, fp) && i < imgSize)
     {
@@ -113,17 +114,7 @@ static PPMImage *readPPM(const char *filename)
         img->data[i].blue = conv;
         i++;
     }
-/*
-    for (int j = 0; j < img->height * img->width; j++)
-    {
-    printf("%f", img->data[j].red);
-    printf("    ");
-    printf("%f", img->data[j].green);
-    printf("    ");
-    printf("%f", img->data[j].blue);
-    printf("\n");
-    }
-    */
+
     fclose(fp);
     return img;
 }
@@ -247,7 +238,6 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             clusters[nearest].center.red = ((old_size * clusters[nearest].center.red) + img->data[randPixNum].red ) / (double) new_size;
             clusters[nearest].center.green = ((old_size * clusters[nearest].center.green) + img->data[randPixNum].green ) / (double) new_size;
             clusters[nearest].center.blue = ((old_size * clusters[nearest].center.blue) + img->data[randPixNum].blue ) / (double) new_size;
-
             clusters[nearest].size = new_size;      
     } 
 
@@ -275,14 +265,11 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             {
                 totalRGB = tempTotalRGB;
                 nearest = j;
-            } 
-            
+            }     
         }
-
         imag->data[i].red = clusters[nearest].center.red;
         imag->data[i].green = clusters[nearest].center.green;
-        imag->data[i].blue = clusters[nearest].center.blue;
-        
+        imag->data[i].blue = clusters[nearest].center.blue;       
     }
 
     //Finally, return the quantized image object to main
