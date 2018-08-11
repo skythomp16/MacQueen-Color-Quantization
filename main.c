@@ -26,10 +26,15 @@ typedef struct {
 //Funcion that will read image information in
 static PPMImage *readPPM(const char *filename)
 {
+    //Variable declarations
     char buff[16];
     PPMImage *img;
     FILE *fp;
     int c, rgb_comp_color;
+    unsigned char *inBuf;
+    int i;
+    double conv;
+    int imgSize;
 
     //open PPM file for reading
     fp = fopen(filename, "rb");
@@ -95,10 +100,9 @@ static PPMImage *readPPM(const char *filename)
     }
 
     //read pixel data from file
-    unsigned char *inBuf = malloc(sizeof(unsigned char));
-    int i = 0;
-    double conv;
-    int imgSize = (img->height * img->width);
+    inBuf = malloc(sizeof(unsigned char));
+    i = 0;
+    imgSize = (img->height * img->width);
     
     //While there are still pixels left
     while(fread(inBuf, 1, 1, fp) && i < imgSize)
@@ -122,7 +126,14 @@ static PPMImage *readPPM(const char *filename)
 //Function to write the new image after color quantization
 void writePPM(const char *filename, PPMImage *img)
 {
+    //Variable Declaration
     FILE *fp;
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+    int i = 0; 
+    int length;
+
     //open file for output
     fp = fopen(filename, "wb");
     if (!fp) {
@@ -143,19 +154,14 @@ void writePPM(const char *filename, PPMImage *img)
     // rgb component depth
     fprintf(fp, "%d\n", RGB_COMPONENT_COLOR);
 
-/*
-    // pixel data
-    fwrite(img->data, 3 * img->width, img->height, fp);
-    */
-
-    int i = 0; 
-    int length = (img->height * img->width);
+    i = 0; 
+    length = (img->height * img->width);
 
     while (i < length)
     {
-        unsigned char r = (unsigned char)(img->data[i].red);
-        unsigned char g = (unsigned char)(img->data[i].green);
-        unsigned char b = (unsigned char)(img->data[i].blue);
+        r = (unsigned char)(img->data[i].red);
+        g = (unsigned char)(img->data[i].green);
+        b = (unsigned char)(img->data[i].blue);
 
         fwrite(&r, sizeof(unsigned char), 1, fp);
         fwrite(&g, sizeof(unsigned char), 1, fp);
@@ -167,44 +173,47 @@ void writePPM(const char *filename, PPMImage *img)
 
 PPMImage* macqueenClustering(PPMImage *img, int numColors)
 {
-    //Filling an array with random numbers for number of colors to be quantized down to
-    int numFixedColors = 64;
-
-    //Make an array of clusters
-    PPMCluster* clusters = malloc(numFixedColors * sizeof(*clusters));
-
-    //Variable to indicate the number of pixels in the image
-    int numPixels = (img->width * img->height);
-
-    //Initialize each center to a random value and give each cluster a size of 1
-    for (int i = 0; i < numFixedColors; i++)
-    {
-        //PPMPixel myTemp = img->data[rand() % (numPixels)];
-        //clusters[i].center = myTemp;
-        int randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
-        clusters[i].center.red = img->data[randomNumber].red;
-        clusters[i].center.green = img->data[randomNumber].green;
-        clusters[i].center.blue = img->data[randomNumber].blue;
-
-        clusters[i].size = 1;
-    }
-
-    //Now time for data clustering using k-means
-    //Some variables
+    //Variable Declarations/initializations
+    int numPixels = (img->height * img->width);
+    PPMCluster *clusters;
+    int randomNumber;
+    int numFixedColors;
     int numPass = 1;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
     PPMPixel closest;
-    PPMCluster temp;
-    double diffG;
-    double diffR;
-    double diffB;
+    double delta = 0.0;
     double totalRGB = 0.00;
     int nearest;
     double tempTotalRGB;
     int counter = 0;
+    int old_size;
+    int new_size;
+    PPMCluster *cluster;
+    PPMPixel pixel;
+    PPMImage *imag;
+    PPMPixel *newPixel;
 
+    //Filling an array with random numbers for number of colors to be quantized down to
+    numFixedColors = 64;
+
+    //Make an array of clusters
+    clusters = malloc(numFixedColors * sizeof(*clusters));
+
+    //Initialize each center to a random value and give each cluster a size of 1
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        cluster = &clusters[i];
+        pixel = img->data[randomNumber];
+        cluster->center.red = pixel.red;
+        cluster->center.green = pixel.green;
+        cluster->center.blue = pixel.blue;
+        cluster->size = 1;
+    }
+
+    //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
      {
@@ -214,15 +223,18 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         //Set totalRGB to be the highest it can be
         totalRGB = 195075.00; // 3 * 255 * 255 
 
+        //Random pixel
+        pixel = img->data[randPixNum];
+
         //Next, find the closest pixel to this pixel in the centers array
         for (int i = 0; i < numFixedColors; i++) {
-            temp = clusters[i];
-
-            diffB = (img->data[randPixNum].blue - temp.center.blue) * (img->data[randPixNum].blue - temp.center.blue);
-            diffG = (img->data[randPixNum].green - temp.center.green) * (img->data[randPixNum].green - temp.center.green);
-            diffR = (img->data[randPixNum].red - temp.center.red) * (img->data[randPixNum].red - temp.center.red);
-            
-	        tempTotalRGB = diffR + diffG + diffB;
+            cluster = &clusters[i];
+            delta = pixel.red - cluster->center.red;
+            tempTotalRGB = (delta * delta);
+            delta = pixel.green - cluster->center.green;
+            tempTotalRGB += (delta * delta);
+            delta = pixel.blue - cluster->center.blue;
+            tempTotalRGB += (delta * delta);
 
             if (tempTotalRGB < totalRGB)
             {
@@ -232,17 +244,17 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         }
 
         //Update the center in the centers array ci = (Ni ci + xr)/(Ni + 1)
-            int old_size = clusters[nearest].size;
-            int new_size = old_size + 1;
-            
-            clusters[nearest].center.red = ((old_size * clusters[nearest].center.red) + img->data[randPixNum].red ) / (double) new_size;
-            clusters[nearest].center.green = ((old_size * clusters[nearest].center.green) + img->data[randPixNum].green ) / (double) new_size;
-            clusters[nearest].center.blue = ((old_size * clusters[nearest].center.blue) + img->data[randPixNum].blue ) / (double) new_size;
-            clusters[nearest].size = new_size;      
-    } 
+        cluster = &clusters[nearest];
+        old_size = cluster->size;
+        new_size = old_size + 1;
+        
+        cluster->center.red = ((old_size * cluster->center.red) + pixel.red ) / (double) new_size;
+        cluster->center.green = ((old_size * cluster->center.green) + pixel.green ) / (double) new_size;
+        cluster->center.blue = ((old_size * cluster->center.blue) + pixel.blue ) / (double) new_size;
+        cluster->size = new_size;
+    }
 
     //Create new image object
-    PPMImage *imag;
     imag = (PPMImage *)malloc(sizeof(PPMImage));
     imag->data = (PPMPixel*)malloc(img->width * img->height * sizeof(PPMPixel));
     imag->width = img->width;
@@ -252,14 +264,17 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     for (int i = 0; i < numPixels; i++)
     {
         totalRGB = 195075.00;
+        pixel = img->data[i];
         
         for (int j = 0; j < numFixedColors; j++) 
         {
-            diffB = (img->data[i].blue - clusters[j].center.blue) * (img->data[i].blue - clusters[j].center.blue);
-            diffG = (img->data[i].green - clusters[j].center.green) * (img->data[i].green - clusters[j].center.green);
-            diffR = (img->data[i].red - clusters[j].center.red) * (img->data[i].red - clusters[j].center.red);
-            
-            tempTotalRGB = diffR + diffG + diffB;
+            cluster = &clusters[j];
+            delta = pixel.red - cluster->center.red;
+            tempTotalRGB = (delta * delta);
+            delta = pixel.green - cluster->center.green;
+            tempTotalRGB += (delta * delta);
+            delta = pixel.blue - cluster->center.blue;
+            tempTotalRGB += (delta * delta);
 
             if (tempTotalRGB < totalRGB)
             {
@@ -267,9 +282,12 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
                 nearest = j;
             }     
         }
-        imag->data[i].red = clusters[nearest].center.red;
-        imag->data[i].green = clusters[nearest].center.green;
-        imag->data[i].blue = clusters[nearest].center.blue;       
+
+        newPixel = &imag->data[i];
+        pixel = clusters[nearest].center;
+        newPixel->red = pixel.red;
+        newPixel->green = pixel.green;
+        newPixel->blue = pixel.blue;       
     }
 
     //Finally, return the quantized image object to main
@@ -282,9 +300,7 @@ double computeError(PPMImage *image1, PPMImage *image2)
     //First some variables
     int i = 0;
     double err;
-    double diffR;
-    double diffG;
-    double diffB;
+    double delta;
     double total = 0;
     int size = image1->width * image1->height;
 
@@ -292,17 +308,15 @@ double computeError(PPMImage *image1, PPMImage *image2)
     while (i < size)
     {
         //First take differences
-        diffR = image1->data[i].red - image2->data[i].red;
-        diffG = image1->data[i].green - image2->data[i].green;
-        diffB = image1->data[i].blue - image2->data[i].blue;
-
-        //Now square those numbers (which will also turn all negatives into positives)
-        diffR = diffR * diffR;
-        diffG = diffG * diffG;
-        diffB = diffB * diffB;
-
-        //Add these up into a total variable
-        total += (diffR + diffG + diffB);
+        delta = image1->data[i].red - image2->data[i].red;
+        delta = delta * delta;
+        total += delta;
+        delta = image1->data[i].green - image2->data[i].green;
+        delta = delta * delta;
+        total += delta;
+        delta = image1->data[i].blue - image2->data[i].blue;
+        delta = delta * delta;
+        total += delta;
 
         //Increment i
         i++;
@@ -340,7 +354,7 @@ int main() {
     free(image2->data);
     free(image);
     free(image2);
-    
+
     //Wait for user response
     printf("Press any key...");
     getchar();

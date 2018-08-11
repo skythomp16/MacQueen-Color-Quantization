@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
@@ -98,6 +99,7 @@ static PPMImage *readPPM(const char *filename)
     int i = 0;
     double conv;
     int imgSize = (img->height * img->width);
+    
     //While there are still pixels left
     while(fread(inBuf, 1, 1, fp) && i < imgSize)
     {
@@ -112,17 +114,7 @@ static PPMImage *readPPM(const char *filename)
         img->data[i].blue = conv;
         i++;
     }
-/*
-    for (int j = 0; j < img->height * img->width; j++)
-    {
-    printf("%f", img->data[j].red);
-    printf("    ");
-    printf("%f", img->data[j].green);
-    printf("    ");
-    printf("%f", img->data[j].blue);
-    printf("\n");
-    }
-    */
+
     fclose(fp);
     return img;
 }
@@ -151,11 +143,6 @@ void writePPM(const char *filename, PPMImage *img)
     // rgb component depth
     fprintf(fp, "%d\n", RGB_COMPONENT_COLOR);
 
-/*
-    // pixel data
-    fwrite(img->data, 3 * img->width, img->height, fp);
-    */
-
     int i = 0; 
     int length = (img->height * img->width);
 
@@ -173,6 +160,7 @@ void writePPM(const char *filename, PPMImage *img)
     fclose(fp);
 }
 
+
 PPMImage* macqueenClustering(PPMImage *img, int numColors)
 {
     //Filling an array with random numbers for number of colors to be quantized down to
@@ -187,9 +175,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Initialize each center to a random value and give each cluster a size of 1
     for (int i = 0; i < numFixedColors; i++)
     {
-        //PPMPixel myTemp = img->data[rand() % (numPixels)];
-        //clusters[i].center = myTemp;
-        int randomNumber = rand() % numPixels;
+        int randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
         clusters[i].center.red = img->data[randomNumber].red;
         clusters[i].center.green = img->data[randomNumber].green;
         clusters[i].center.blue = img->data[randomNumber].blue;
@@ -205,22 +191,22 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int index = 0;
     PPMPixel closest;
     PPMCluster temp;
-    int diffG;
-    int diffR;
-    int diffB;
-    int totalRGB = 0;
+    double diffG;
+    double diffR;
+    double diffB;
+    double totalRGB = 0.00;
     int nearest;
-    int tempTotalRGB;
+    double tempTotalRGB;
     int counter = 0;
 
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
      {
         //Now, select a random pixel from the pixel array (pick a random pixel from the image)
-        randPixNum = rand() % numPixels + 1;
+        randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
 
         //Set totalRGB to be the highest it can be
-        totalRGB = 195075; // 3 * 255 * 255 
+        totalRGB = 195075.00; // 3 * 255 * 255 
 
         //Next, find the closest pixel to this pixel in the centers array
         for (int i = 0; i < numFixedColors; i++) {
@@ -246,7 +232,6 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             clusters[nearest].center.red = ((old_size * clusters[nearest].center.red) + img->data[randPixNum].red ) / (double) new_size;
             clusters[nearest].center.green = ((old_size * clusters[nearest].center.green) + img->data[randPixNum].green ) / (double) new_size;
             clusters[nearest].center.blue = ((old_size * clusters[nearest].center.blue) + img->data[randPixNum].blue ) / (double) new_size;
-
             clusters[nearest].size = new_size;      
     } 
 
@@ -260,7 +245,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Now quantize the image
     for (int i = 0; i < numPixels; i++)
     {
-        totalRGB = 195075;
+        totalRGB = 195075.00;
         
         for (int j = 0; j < numFixedColors; j++) 
         {
@@ -274,14 +259,11 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             {
                 totalRGB = tempTotalRGB;
                 nearest = j;
-            } 
-            
+            }     
         }
-
         imag->data[i].red = clusters[nearest].center.red;
         imag->data[i].green = clusters[nearest].center.green;
-        imag->data[i].blue = clusters[nearest].center.blue;
-        
+        imag->data[i].blue = clusters[nearest].center.blue;       
     }
 
     //Finally, return the quantized image object to main
@@ -326,6 +308,7 @@ double computeError(PPMImage *image1, PPMImage *image2)
     //Now return the error to main
     return err;
 }
+
 
 //Main function
 int main() {
