@@ -198,6 +198,9 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     PPMImage *imag;
     PPMPixel *newPixel;
 
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 42u, 54u);
+
     //Filling an array with random numbers for number of colors to be quantized down to
     numFixedColors = 64;
 
@@ -210,7 +213,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         randPixNum = pcg32_boundedrand(numPix);
         //randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
         cluster = &clusters[i];
-        pixel = img->data[randomNumber];
+        pixel = img->data[randPixNum];
         cluster->center.red = pixel.red;
         cluster->center.green = pixel.green;
         cluster->center.blue = pixel.blue;
@@ -310,21 +313,15 @@ double computeError(PPMImage *image1, PPMImage *image2)
     int size = image1->width * image1->height;
 
     //Now loop through every pixel in both images and save the difference for pixel values
-    while (i < size)
+    for (i = 0; i < size; i++)
     {
         //First take differences
         delta = image1->data[i].red - image2->data[i].red;
-        delta = delta * delta;
-        total += delta;
+        total += (delta * delta);
         delta = image1->data[i].green - image2->data[i].green;
-        delta = delta * delta;
-        total += delta;
+        total += (delta * delta);
         delta = image1->data[i].blue - image2->data[i].blue;
-        delta = delta * delta;
-        total += delta;
-
-        //Increment i
-        i++;
+        total += (delta * delta);
     }
 
     //Compute Mean Squared Error by dividing total by size
@@ -341,7 +338,9 @@ int main() {
     image = readPPM("sample.ppm");
 
     //Random number generator (for selecting random centers)
-    srand(time(NULL));
+    //srand(time(NULL));
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 42u, 54u);
 
     //Organize the pixels into clusters
     PPMImage *image2;
