@@ -3,6 +3,8 @@
 #include <time.h>
 #include <math.h>
 
+#include "pcg_basic.h"
+
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
     double red, green, blue;
@@ -180,7 +182,8 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int numFixedColors;
     int numPass = 1;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
-    int randPixNum;
+    uint32_t randPixNum;
+    uint32_t numPix = (int)numPixels;
     int index = 0;
     PPMPixel closest;
     double delta = 0.0;
@@ -204,7 +207,8 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Initialize each center to a random value and give each cluster a size of 1
     for (int i = 0; i < numFixedColors; i++)
     {
-        randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        randPixNum = pcg32_boundedrand(numPix);
+        //randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
         cluster = &clusters[i];
         pixel = img->data[randomNumber];
         cluster->center.red = pixel.red;
@@ -218,7 +222,8 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     for (index = 0; index < terminate; index++)
      {
         //Now, select a random pixel from the pixel array (pick a random pixel from the image)
-        randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        //randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        randPixNum = pcg32_boundedrand(numPix);
 
         //Set totalRGB to be the highest it can be
         totalRGB = 195075.00; // 3 * 255 * 255 
