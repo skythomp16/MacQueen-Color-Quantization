@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
-
-#include "pcg_basic.h"
+#include <time.h>
 
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
@@ -182,8 +181,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int numFixedColors;
     int numPass = 1;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
-    uint32_t randPixNum;
-    uint32_t numPix = (int)numPixels;
+    int randPixNum;
     int index = 0;
     PPMPixel closest;
     double delta = 0.0;
@@ -198,9 +196,6 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     PPMImage *imag;
     PPMPixel *newPixel;
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 42u, 54u);
-
     //Filling an array with random numbers for number of colors to be quantized down to
     numFixedColors = 64;
 
@@ -210,8 +205,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Initialize each center to a random value and give each cluster a size of 1
     for (int i = 0; i < numFixedColors; i++)
     {
-        randPixNum = pcg32_boundedrand(numPix);
-        //randomNumber = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+        randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
         cluster = &clusters[i];
         pixel = img->data[randPixNum];
         cluster->center.red = pixel.red;
@@ -225,8 +219,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     for (index = 0; index < terminate; index++)
      {
         //Now, select a random pixel from the pixel array (pick a random pixel from the image)
-        //randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
-        randPixNum = pcg32_boundedrand(numPix);
+        randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
 
         //Set totalRGB to be the highest it can be
         totalRGB = 195075.00; // 3 * 255 * 255 
@@ -333,25 +326,37 @@ double computeError(PPMImage *image1, PPMImage *image2)
 
 //Main function
 int main() {
-    //Create a new image object and read the image in
+    //Some variables
     PPMImage *image;
+    PPMImage *image2;
+    double err;
+    clock_t t;
+    double msec;
+
+    //Start timer
+    t = clock();
+
+    //Create a new image object and read the image in
     image = readPPM("sample.ppm");
 
     //Random number generator (for selecting random centers)
-    //srand(time(NULL));
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 42u, 54u);
+    srand(time(NULL));
 
     //Organize the pixels into clusters
-    PPMImage *image2;
     image2 = macqueenClustering(image, 64);
 
     //Create a new image based on the color quantization
     writePPM("new.ppm", image2);
 
     //Next, compute the Mean Squared Error and print to console
-    double err = computeError(image, image2);
+    err = computeError(image, image2);
     printf("%f\n", err);
+
+    //Calculate time and print to console
+    t = clock() - t;
+    msec = ((double)t)/CLOCKS_PER_SEC; // in seconds
+    printf("%f", msec);
+    printf(" seconds\n");
 
     //Finally, free up all memory allocated in the program (that hasn't already been freed)
     free(image->data);
