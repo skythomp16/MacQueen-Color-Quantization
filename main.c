@@ -3,6 +3,7 @@
 #include <time.h>
 #include <math.h>
 #include <time.h>
+#include <sys/time.h>
 
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
@@ -330,11 +331,10 @@ int main() {
     PPMImage *image;
     PPMImage *image2;
     double err;
-    clock_t t;
-    double msec;
+    struct timeval  tv1, tv2;
 
     //Start timer
-    t = clock();
+    gettimeofday(&tv1, NULL);
 
     //Create a new image object and read the image in
     image = readPPM("sample.ppm");
@@ -353,10 +353,11 @@ int main() {
     printf("%f\n", err);
 
     //Calculate time and print to console
-    t = clock() - t;
-    msec = ((double)t)/CLOCKS_PER_SEC; // in seconds
-    printf("%f", msec);
-    printf(" seconds\n");
+    gettimeofday(&tv2, NULL);
+
+    printf ("Total time = %f seconds\n",
+            (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+            (double) (tv2.tv_sec - tv1.tv_sec));
 
     //Finally, free up all memory allocated in the program (that hasn't already been freed)
     free(image->data);
