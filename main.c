@@ -196,6 +196,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     PPMPixel pixel;
     PPMImage *imag;
     PPMPixel *newPixel;
+    int changed = 1;
 
     //Filling an array with random numbers for number of colors to be quantized down to
     numFixedColors = 64;
@@ -214,7 +215,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         cluster->center.blue = pixel.blue;
         cluster->size = 1;
     }
-
+/*
     //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
@@ -254,6 +255,22 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         cluster->center.green = ((old_size * cluster->center.green) + pixel.green ) / (double) new_size;
         cluster->center.blue = ((old_size * cluster->center.blue) + pixel.blue ) / (double) new_size;
         cluster->size = new_size;
+    }
+*/
+    while(changed)
+    {
+        //reset the changed variable to "unchanged"
+        changed = 0;
+
+        //Loop over every pixel
+        for (int i = 0; i < numColors; i++)
+        {
+            //Assign the pixel to the closest cluster using maximin equation
+
+        }
+
+        //Update the maximin center of each cluster
+
     }
 
     //Create new image object
