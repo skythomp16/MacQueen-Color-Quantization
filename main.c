@@ -173,6 +173,33 @@ void writePPM(const char *filename, PPMImage *img)
     fclose(fp);
 }
 
+//Helper function for min-max clustering
+double min(PPMCluster *a, PPMPixel b, int size)
+{
+    double delta;
+    PPMCluster *cluster;
+    double tempTotalRGB;
+    double totalRGB = 0.0;
+
+    for (int i = 0; i < size; i++)
+    {
+        cluster = &a[i];
+        delta = b.red - cluster->center.red;
+        tempTotalRGB = (delta * delta);
+        delta = b.green - cluster->center.green;
+        tempTotalRGB += (delta * delta);
+        delta = b.blue - cluster->center.blue;
+        tempTotalRGB += (delta * delta);
+
+        if (tempTotalRGB > totalRGB)
+        {
+            totalRGB = tempTotalRGB;
+        }
+    }
+
+    return totalRGB;
+}
+
 PPMImage* macqueenClustering(PPMImage *img, int numColors)
 {
     //Variable Declarations/initializations
@@ -180,7 +207,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     PPMCluster *clusters;
     int randomNumber;
     int numFixedColors;
-    int numPass = 1;
+    int numPass = 2;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
@@ -196,7 +223,10 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     PPMPixel pixel;
     PPMImage *imag;
     PPMPixel *newPixel;
-    int changed = 1;
+    int tempIteration = 0;
+    int total = 1000000000; //A really high number
+    double distance = 0.0;
+    double tempDistance = 0.0;
 
     //Filling an array with random numbers for number of colors to be quantized down to
     numFixedColors = 64;
@@ -204,7 +234,8 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Make an array of clusters
     clusters = malloc(numFixedColors * sizeof(*clusters));
 
-    //Initialize each center to a random value and give each cluster a size of 1
+    //Initialize each center to a random value and give each cluster a size of 1 -- RANDOM METHOD OF INITIALIZATION
+    /*
     for (int i = 0; i < numFixedColors; i++)
     {
         randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
@@ -215,7 +246,49 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         cluster->center.blue = pixel.blue;
         cluster->size = 1;
     }
-/*
+    */
+   
+    //Initialize each cluster with min-max initialization
+
+    //Next elements chosen based on min-max approach
+    //Large loop is done one time for each cluster
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        //First cluster chosen randomly
+        if (i == 0)
+        {
+            cluster = &clusters[0];
+            randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
+            pixel = img->data[randPixNum];
+            cluster->center.red = pixel.red;
+            cluster->center.green = pixel.green;
+            cluster->center.blue = pixel.blue;
+            cluster->size = 1;
+        }
+        else
+        {
+            //All other clusters chosen using min-max method
+            //Loop through every pixel and find the min-max of it
+            for (int j = 0; j < numPixels; j++)
+            {
+                tempDistance = min(clusters, pixel, i + 1);
+                if (tempDistance > distance)
+                {
+                    distance = tempDistance;
+                    tempIteration = j;
+                }
+            }
+
+            //Choose the greatest of these to be the next cluster center
+            cluster = &clusters[i];
+            pixel = img->data[tempIteration];
+            cluster->center.red = pixel.red;
+            cluster->center.green = pixel.green;
+            cluster->center.blue = pixel.blue;
+            cluster->size = 1;
+        }
+    }
+
     //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
@@ -255,22 +328,6 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         cluster->center.green = ((old_size * cluster->center.green) + pixel.green ) / (double) new_size;
         cluster->center.blue = ((old_size * cluster->center.blue) + pixel.blue ) / (double) new_size;
         cluster->size = new_size;
-    }
-*/
-    while(changed)
-    {
-        //reset the changed variable to "unchanged"
-        changed = 0;
-
-        //Loop over every pixel
-        for (int i = 0; i < numColors; i++)
-        {
-            //Assign the pixel to the closest cluster using maximin equation
-
-        }
-
-        //Update the maximin center of each cluster
-
     }
 
     //Create new image object
