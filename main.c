@@ -179,7 +179,7 @@ double min(PPMCluster *a, PPMPixel b, int size)
     double delta;
     PPMCluster *cluster;
     double tempTotalRGB;
-    double totalRGB = 0.0;
+    double totalRGB = 100000000000;
 
     for (int i = 0; i < size; i++)
     {
@@ -191,7 +191,7 @@ double min(PPMCluster *a, PPMPixel b, int size)
         delta = b.blue - cluster->center.blue;
         tempTotalRGB += (delta * delta);
 
-        if (tempTotalRGB > totalRGB)
+        if (tempTotalRGB < totalRGB)
         {
             totalRGB = tempTotalRGB;
         }
@@ -227,6 +227,9 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int total = 1000000000; //A really high number
     double distance = 0.0;
     double tempDistance = 0.0;
+    double red = 0.0;
+    double green = 0.0;
+    double blue = 0.0;
 
     //Filling an array with random numbers for number of colors to be quantized down to
     numFixedColors = 64;
@@ -254,15 +257,25 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     //Large loop is done one time for each cluster
     for (int i = 0; i < numFixedColors; i++)
     {
-        //First cluster chosen randomly
+        //First cluster chosen by taking an average of all pixels
         if (i == 0)
         {
             cluster = &clusters[0];
-            randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
-            pixel = img->data[randPixNum];
-            cluster->center.red = pixel.red;
-            cluster->center.green = pixel.green;
-            cluster->center.blue = pixel.blue;
+            //Loop through every pixel to get an average
+            for (int j = 0; j < numPixels; j++)
+            {
+                pixel = img->data[j];
+                red += pixel.red;
+                green += pixel.green;
+                blue += pixel.blue;
+            }
+            red = red / numPixels;
+            green = green / numPixels;
+            blue = blue / numPixels;
+
+            cluster->center.red = red;
+            cluster->center.green = green;
+            cluster->center.blue = blue;
             cluster->size = 1;
         }
         else
