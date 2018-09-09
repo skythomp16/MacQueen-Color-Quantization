@@ -87,6 +87,12 @@ unsigned long genrand_int32(void)
     return y;
 }
 
+double genrand_real2(void)
+{
+    return genrand_int32()*(1.0/4294967296.0); 
+    /* divided by 2^32 */
+}
+
 //Funcion that will read image information in
 static PPMImage *readPPM(const char *filename)
 {
@@ -369,7 +375,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     for (index = 0; index < terminate; index++)
      {
         //Now, select a random pixel from the pixel array (pick a random pixel from the image)
-        randPixNum = (int) (genrand_int32() / (RAND_MAX + 1.0) * numPixels);
+        randPixNum = (int) (genrand_real2() * numPixels);
 
         //Set totalRGB to be the highest it can be
         totalRGB = 195075.00; // 3 * 255 * 255 
