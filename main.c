@@ -492,7 +492,7 @@ int main() {
     gettimeofday(&tv1, NULL);
 
     //Create a new image object and read the image in
-    image = readPPM("sample.ppm");
+    image = readPPM("dummy.ppm");
 
     //Random number generator (for selecting random centers)
     init_genrand(4357U);
