@@ -275,7 +275,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     PPMCluster *clusters;
     int randomNumber;
     int numFixedColors;
-    int numPass = 2;
+    int numPass = 1;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
@@ -300,7 +300,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     double blue = 0.0;
 
     //Filling an array with random numbers for number of colors to be quantized down to
-    numFixedColors = 64;
+    numFixedColors = 4;
 
     //Make an array of clusters
     clusters = malloc(numFixedColors * sizeof(*clusters));
@@ -352,7 +352,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             //Loop through every pixel and find the min-max of it
             for (int j = 0; j < numPixels; j++)
             {
-                tempDistance = min(clusters, pixel, i + 1);
+                tempDistance = min(clusters, pixel, i);
                 if (tempDistance > distance)
                 {
                     distance = tempDistance;
@@ -368,6 +368,21 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             cluster->center.blue = pixel.blue;
             cluster->size = 1;
         }
+    }
+
+    //Now print the centers
+    for (int i = 0; i < numFixedColors; i++)
+    {
+        cluster = &clusters[i];
+        double re = cluster->center.red;
+        double gr = cluster->center.green;
+        double bl = cluster->center.blue;
+
+        printf("(");
+        printf("%d", re); printf(",");
+        printf("%d", gr); printf(",");
+        printf("%d", bl);
+        printf(")");
     }
 
     //Now time for data clustering using k-means
