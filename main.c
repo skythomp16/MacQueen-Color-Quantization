@@ -300,7 +300,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     double blue = 0.0;
 
     //Filling an array with random numbers for number of colors to be quantized down to
-    numFixedColors = 64;
+    numFixedColors = 32;
 
     //Make an array of clusters
     clusters = malloc(numFixedColors * sizeof(*clusters));
@@ -353,7 +353,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             for (int j = 0; j < numPixels; j++)
             {
                 pixel = img->data[j];
-                tempDistance = min(&clusters[i], pixel, i);
+                tempDistance = min(clusters, pixel, i);
                 if (tempDistance > distance)
                 {
                     distance = tempDistance;
@@ -371,7 +371,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
             distance = 0.0;
         }
     }
-
+/*
     //Now print the centers
     for (int i = 0; i < numFixedColors; i++)
     {
@@ -386,7 +386,7 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
         printf("%f", bl);
         printf(")");
     }
-
+*/
     //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
@@ -509,7 +509,7 @@ int main() {
     gettimeofday(&tv1, NULL);
 
     //Create a new image object and read the image in
-    image = readPPM("sample.ppm");
+    image = readPPM("sample4.ppm");
 
     //Random number generator (for selecting random centers)
     init_genrand(4357U);
