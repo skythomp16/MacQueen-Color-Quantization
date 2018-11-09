@@ -34,6 +34,11 @@ typedef struct {
 static unsigned long mt[N]; /* the array for the state vector  */
 static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 
+//public variables
+double r = 0.0;
+double g = 0.0;
+double b = 0.0;
+
 /* initializes mt[N] with a seed */
 void init_genrand(unsigned long s)
 {
@@ -105,6 +110,7 @@ static PPMImage *readPPM(const char *filename)
     int i;
     double conv;
     int imgSize;
+    int numPixels;
 
     //open PPM file for reading
     fp = fopen(filename, "rb");
@@ -177,17 +183,24 @@ static PPMImage *readPPM(const char *filename)
     //While there are still pixels left
     while(fread(inBuf, 1, 1, fp) && i < imgSize)
     {
-        //Read in pixels using buffer
+        //Read in pixels using buffer and calculate center mass
         conv = *inBuf;
         img->data[i].red = conv;
+        r += conv;
         fread(inBuf, 1, 1, fp);
         conv = *inBuf;
         img->data[i].green = conv;
+        g += conv;
         fread(inBuf, 1, 1, fp);
         conv = *inBuf;
         img->data[i].blue = conv;
+        b += conv;
         i++;
     }
+
+    r = r / imgSize;
+    g = g / imgSize;
+    b = b / imgSize;
 
     fclose(fp);
     return img;
@@ -198,9 +211,9 @@ void writePPM(const char *filename, PPMImage *img)
 {
     //Variable Declaration
     FILE *fp;
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
+    unsigned char re;
+    unsigned char gr;
+    unsigned char bl;
     int i = 0; 
     int length;
 
@@ -229,20 +242,20 @@ void writePPM(const char *filename, PPMImage *img)
 
     while (i < length)
     {
-        r = (unsigned char)(img->data[i].red);
-        g = (unsigned char)(img->data[i].green);
-        b = (unsigned char)(img->data[i].blue);
+        re = (unsigned char)(img->data[i].red);
+        gr = (unsigned char)(img->data[i].green);
+        bl = (unsigned char)(img->data[i].blue);
 
-        fwrite(&r, sizeof(unsigned char), 1, fp);
-        fwrite(&g, sizeof(unsigned char), 1, fp);
-        fwrite(&b, sizeof(unsigned char), 1, fp);
+        fwrite(&re, sizeof(unsigned char), 1, fp);
+        fwrite(&gr, sizeof(unsigned char), 1, fp);
+        fwrite(&bl, sizeof(unsigned char), 1, fp);
         i++;
     }
     fclose(fp);
 }
 
 //Helper function for min-max clustering
-double min(PPMCluster *a, PPMPixel b, int size)
+double min(PPMCluster *c, PPMPixel d, int size)
 {
     double delta;
     PPMCluster *cluster;
@@ -251,12 +264,12 @@ double min(PPMCluster *a, PPMPixel b, int size)
 
     for (int i = 0; i < size; i++)
     {
-        cluster = &a[i];
-        delta = b.red - cluster->center.red;
+        cluster = &c[i];
+        delta = d.red - cluster->center.red;
         tempTotalRGB = (delta * delta);
-        delta = b.green - cluster->center.green;
+        delta = d.green - cluster->center.green;
         tempTotalRGB += (delta * delta);
-        delta = b.blue - cluster->center.blue;
+        delta = d.blue - cluster->center.blue;
         tempTotalRGB += (delta * delta);
 
         if (tempTotalRGB < totalRGB)
@@ -295,12 +308,10 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     int total = 1000000000; //A really high number
     double distance = 0.0;
     double tempDistance = 0.0;
-    double red = 0.0;
-    double green = 0.0;
-    double blue = 0.0;
+    double tempTotalDist = 0.0;
 
     //Filling an array with random numbers for number of colors to be quantized down to
-    numFixedColors = 32;
+    numFixedColors = numColors;
 
     //Make an array of clusters
     clusters = malloc(numFixedColors * sizeof(*clusters));
@@ -319,57 +330,90 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
     }
     */
    
-    //Initialize each cluster with min-max initialization
+    //Initialize first cluster
+    cluster = &clusters[0];
+    cluster->center.red = r;
+    cluster->center.green = g;
+    cluster->center.blue = b;
+    cluster->size = 1;
+
+    /*
+    double min(PPMCluster *c, PPMPixel d, int size)
+{
+    double delta;
+    PPMCluster *cluster;
+    double tempTotalRGB;
+    double totalRGB = 100000000000;
+
+    for (int i = 0; i < size; i++)
+    {
+        cluster = &c[i];
+        delta = d.red - cluster->center.red;
+        tempTotalRGB = (delta * delta);
+        delta = d.green - cluster->center.green;
+        tempTotalRGB += (delta * delta);
+        delta = d.blue - cluster->center.blue;
+        tempTotalRGB += (delta * delta);
+
+        if (tempTotalRGB < totalRGB)
+        {
+            totalRGB = tempTotalRGB;
+        }
+    }
+
+    return totalRGB;
+}
+*/
+double delta1;
+double tempTotalRGD;
+double totalRGD = 1000000000;
+double *initialized = malloc(numFixedColors * sizeof(double));
+int initCounter = 0;
 
     //Next elements chosen based on min-max approach
     //Large loop is done one time for each cluster
-    for (int i = 0; i < numFixedColors; i++)
+    for (int i = 0 + 1; i < numFixedColors; i++)
     {
-        //First cluster chosen by taking an average of all pixels
-        if (i == 0)
+        //All other clusters chosen using min-max method
+        //Loop through every pixel and find the min-max of it
+        for (int j = 0; j < numPixels; j++)
         {
-            cluster = &clusters[0];
-            //Loop through every pixel to get an average
-            for (int j = 0; j < numPixels; j++)
+            pixel = img->data[j];
+            //tempDistance = min(clusters, pixel, i);
+            totalRGD = 100000000;
+            for (int k = 0; k < i; k++)
             {
-                pixel = img->data[j];
-                red += pixel.red;
-                green += pixel.green;
-                blue += pixel.blue;
-            }
-            red = red / numPixels;
-            green = green / numPixels;
-            blue = blue / numPixels;
+                cluster = &clusters[k];
+                delta1 = pixel.red - cluster->center.red;
+                tempTotalRGD = (delta1 * delta1);
+                delta1 = pixel.green - cluster->center.green;
+                tempTotalRGD += (delta1 * delta1);
+                delta1 = pixel.blue - cluster->center.blue;
+                tempTotalRGD += (delta1 * delta1);
 
-            cluster->center.red = red;
-            cluster->center.green = green;
-            cluster->center.blue = blue;
-            cluster->size = 1;
-        }
-        else
-        {
-            //All other clusters chosen using min-max method
-            //Loop through every pixel and find the min-max of it
-            for (int j = 0; j < numPixels; j++)
-            {
-                pixel = img->data[j];
-                tempDistance = min(clusters, pixel, i);
-                if (tempDistance > distance)
+                if (tempTotalRGD < totalRGD)
                 {
-                    distance = tempDistance;
-                    tempIteration = j;
+                    totalRGD = tempTotalRGD;
                 }
             }
+            //initialized[j] = totalRGD;
 
-            //Choose the greatest of these to be the next cluster center
-            cluster = &clusters[i];
-            pixel = img->data[tempIteration];
-            cluster->center.red = pixel.red;
-            cluster->center.green = pixel.green;
-            cluster->center.blue = pixel.blue;
-            cluster->size = 1;
-            distance = 0.0;
+            if (totalRGD > distance)
+            {
+                distance = totalRGD;
+                tempIteration = j;
+            }
         }
+
+        //Choose the greatest of these to be the next cluster center
+        cluster = &clusters[i];
+        pixel = img->data[tempIteration];
+        cluster->center.red = pixel.red;
+        cluster->center.green = pixel.green;
+        cluster->center.blue = pixel.blue;
+        cluster->size = 1;
+        distance = 0.0;
+        totalRGD = 1000000000;
     }
 /*
     //Now print the centers
@@ -515,7 +559,7 @@ int main() {
     init_genrand(4357U);
 
     //Organize the pixels into clusters
-    image2 = macqueenClustering(image, 64);
+    image2 = macqueenClustering(image, 32);
 
     //Create a new image based on the color quantization
     writePPM("new.ppm", image2);
