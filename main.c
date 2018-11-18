@@ -365,42 +365,42 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors)
 }
 */
 double delta1;
-double tempTotalRGD;
-double totalRGD = 1000000000;
-double *initialized = malloc(numFixedColors * sizeof(double));
+double delta2;
+double dist;
+double dmax;
 int initCounter = 0;
+double dj = 1000000000000;
 
     //Next elements chosen based on min-max approach
     //Large loop is done one time for each cluster
     for (int i = 0 + 1; i < numFixedColors; i++)
     {
+        dmax = -100000000000;
         //All other clusters chosen using min-max method
         //Loop through every pixel and find the min-max of it
         for (int j = 0; j < numPixels; j++)
         {
+            //Cache the current pixel
             pixel = img->data[j];
-            //tempDistance = min(clusters, pixel, i);
-            totalRGD = 100000000;
-            for (int k = 0; k < i; k++)
-            {
-                cluster = &clusters[k];
-                delta1 = pixel.red - cluster->center.red;
-                tempTotalRGD = (delta1 * delta1);
-                delta1 = pixel.green - cluster->center.green;
-                tempTotalRGD += (delta1 * delta1);
-                delta1 = pixel.blue - cluster->center.blue;
-                tempTotalRGD += (delta1 * delta1);
 
-                if (tempTotalRGD < totalRGD)
-                {
-                    totalRGD = tempTotalRGD;
-                }
+            //Find distance(xj, ci - 1)
+            cluster = &clusters[i - 1];
+            delta1 = pixel.red - cluster->center.red;
+            dist = (delta1 * delta1);
+            delta1 = pixel.green - cluster->center.green;
+            dist += (delta1 * delta1);
+            delta1 = pixel.blue - cluster->center.blue;
+            dist += (delta1 * delta1);
+
+            //See if dist < dj
+            if (dist < dj)
+            {
+                dj = dist;
             }
-            //initialized[j] = totalRGD;
 
-            if (totalRGD > distance)
+            if (dmax < dj)
             {
-                distance = totalRGD;
+                dmax = dj;
                 tempIteration = j;
             }
         }
@@ -412,10 +412,8 @@ int initCounter = 0;
         cluster->center.green = pixel.green;
         cluster->center.blue = pixel.blue;
         cluster->size = 1;
-        distance = 0.0;
-        totalRGD = 1000000000;
     }
-/*
+
     //Now print the centers
     for (int i = 0; i < numFixedColors; i++)
     {
@@ -430,7 +428,7 @@ int initCounter = 0;
         printf("%f", bl);
         printf(")");
     }
-*/
+
     //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
