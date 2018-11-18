@@ -4,6 +4,7 @@
 #include <math.h>
 #include <time.h>
 #include <sys/time.h>
+#include <string.h>
 
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
@@ -24,6 +25,7 @@ typedef struct {
 
 #define CREATOR "Rewritten by Skyler Thompson"
 #define RGB_COMPONENT_COLOR 255
+#define DIST_MAX 195075
 
 #define N 624
 #define M 397
@@ -260,7 +262,7 @@ double min(PPMCluster *c, PPMPixel d, int size)
     double delta;
     PPMCluster *cluster;
     double tempTotalRGB;
-    double totalRGB = 100000000000;
+    double totalRGB = DIST_MAX;
 
     for (int i = 0; i < size; i++)
     {
@@ -374,14 +376,14 @@ dj = malloc(numPixels * sizeof (double));
 
 for (int j = 0; j < numPixels; j++)
 {
-    dj[j] = 1000000000;
+    dj[j] = DIST_MAX;
 }
 
     //Next elements chosen based on min-max approach
     //Large loop is done one time for each cluster
     for (int i = 0 + 1; i < numFixedColors; i++)
     {
-        dmax = -100000000000;
+        dmax = -DIST_MAX;
         //All other clusters chosen using min-max method
         //Loop through every pixel and find the min-max of it
         for (int j = 0; j < numPixels; j++)
@@ -443,7 +445,7 @@ for (int j = 0; j < numPixels; j++)
         randPixNum = (int) (genrand_real2() * numPixels);
 
         //Set totalRGB to be the highest it can be
-        totalRGB = 195075.00; // 3 * 255 * 255 
+        totalRGB = DIST_MAX; // 3 * 255 * 255 
 
         //Random pixel
         pixel = img->data[randPixNum];
@@ -485,7 +487,7 @@ for (int j = 0; j < numPixels; j++)
     //Now quantize the image
     for (int i = 0; i < numPixels; i++)
     {
-        totalRGB = 195075.00;
+        totalRGB = DIST_MAX;
         pixel = img->data[i];
         
         for (int j = 0; j < numFixedColors; j++) 
@@ -546,27 +548,34 @@ double computeError(PPMImage *image1, PPMImage *image2)
 }
 
 //Main function
-int main() {
+int main(int argc, char *argv[]) {
     //Some variables
     PPMImage *image;
     PPMImage *image2;
     double err;
     struct timeval  tv1, tv2;
+    const char* filename = argv[2];
+    int num_colors = atoi(argv[1]);
+    char* outputfilename;
 
     //Start timer
     gettimeofday(&tv1, NULL);
 
     //Create a new image object and read the image in
-    image = readPPM("sample4.ppm");
+    image = readPPM(filename);
 
     //Random number generator (for selecting random centers)
     init_genrand(4357U);
 
     //Organize the pixels into clusters
-    image2 = macqueenClustering(image, 32);
+    image2 = macqueenClustering(image, num_colors);
 
     //Create a new image based on the color quantization
-    writePPM("new.ppm", image2);
+    outputfilename = strtok(argv[2], ".");
+    outputfilename = strcat(outputfilename, "_");
+    outputfilename = strcat(outputfilename, argv[1]);
+    outputfilename = strcat(outputfilename, ".ppm");
+    writePPM(outputfilename, image2);
 
     //Next, compute the Mean Squared Error and print to console
     err = computeError(image, image2);
