@@ -369,7 +369,13 @@ double delta2;
 double dist;
 double dmax;
 int initCounter = 0;
-double dj = 1000000000000;
+double* dj;
+dj = malloc(numPixels * sizeof (double));
+
+for (int j = 0; j < numPixels; j++)
+{
+    dj[j] = 1000000000;
+}
 
     //Next elements chosen based on min-max approach
     //Large loop is done one time for each cluster
@@ -393,14 +399,14 @@ double dj = 1000000000000;
             dist += (delta1 * delta1);
 
             //See if dist < dj
-            if (dist < dj)
+            if (dist < dj[j])
             {
-                dj = dist;
+                dj[j] = dist;
             }
 
-            if (dmax < dj)
+            if (dmax < dj[j])
             {
-                dmax = dj;
+                dmax = dj[j];
                 tempIteration = j;
             }
         }
@@ -413,7 +419,7 @@ double dj = 1000000000000;
         cluster->center.blue = pixel.blue;
         cluster->size = 1;
     }
-
+/*
     //Now print the centers
     for (int i = 0; i < numFixedColors; i++)
     {
@@ -428,7 +434,7 @@ double dj = 1000000000000;
         printf("%f", bl);
         printf(")");
     }
-
+*/
     //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
