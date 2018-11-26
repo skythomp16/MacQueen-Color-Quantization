@@ -471,10 +471,18 @@ for (int j = 0; j < numPixels; j++)
         cluster = &clusters[nearest];
         old_size = cluster->size;
         new_size = old_size + 1;
+        double p_val = 0.56;
         
+        /*
         cluster->center.red = ((old_size * cluster->center.red) + pixel.red ) / (double) new_size;
         cluster->center.green = ((old_size * cluster->center.green) + pixel.green ) / (double) new_size;
         cluster->center.blue = ((old_size * cluster->center.blue) + pixel.blue ) / (double) new_size;
+        */
+
+       double rate = pow ( new_size, -p_val );
+       cluster->center.red = rate * pixel.red + ( 1 - rate ) * cluster->center.red;
+       cluster->center.green = rate * pixel.green + ( 1 - rate ) * cluster->center.green;
+       cluster->center.blue = rate * pixel.blue + ( 1 - rate ) * cluster->center.blue;
         cluster->size = new_size;
     }
 
