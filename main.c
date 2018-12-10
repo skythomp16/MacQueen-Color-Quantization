@@ -283,14 +283,18 @@ double min(PPMCluster *c, PPMPixel d, int size)
     return totalRGB;
 }
 
-PPMImage* macqueenClustering(PPMImage *img, int numColors)
+PPMImage* kMeansPlusPlus(PPMImage *img, int numColors, double p_value, int num_passes)
+{
+    
+}
+
+PPMImage* macqueenClustering(PPMImage *img, int numColors, double p_value, int num_passes)
 {
     //Variable Declarations/initializations
     int numPixels = (img->height * img->width);
     PPMCluster *clusters;
     int randomNumber;
     int numFixedColors;
-    int numPass = 1;
     int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
     int randPixNum;
     int index = 0;
@@ -562,8 +566,9 @@ int main(int argc, char *argv[]) {
     PPMImage *image2;
     double err;
     struct timeval  tv1, tv2;
-    const char* filename = argv[2];
     int num_colors = atoi(argv[1]);
+    const char* filename = argv[2];
+    int p_value
     char* outputfilename;
 
     //Start timer
