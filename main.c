@@ -6,6 +6,32 @@
 #include <sys/time.h>
 #include <string.h>
 
+/*
+1) Number of images (8) <-- images in a file
+2) Number of colors (4): 32, 64, 128, 256 <-- easy to implement
+3) Initialization (2): maximin, k-means++
+4) Presentation order (2): pseudo-random, quasi-random
+5) Learning rate (6): 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+6) Number of passes (4): 0.25, 0.5, 0.75, 1.0
+
+So, total 8 x 4 x 2 x 2 x 6 x 4 = 3,072
+
+1) K-means++: You should be able to plug-in my code easily. You just have to make sure that it gives at least as good results as maximin. Actually, k-means++ usually gives better.
+
+2) Drawing uniform random integers from a certain range: That code I sent you should work. You just have to test it in a separate program to make sure. 
+Pluging in a randomized code that is untested is a recipe for disaster. You had that problem earlier, which was very difficult to identify.
+
+3) Pseudorandom sampling: This is quite tricky. The algorithm is short, but complex (it requires bit operations because it has to be efficient). 
+I will give you my copy (which is adapted from a famous book). Solve issues (1) and (2) first and then we will deal with issue (3).
+
+4) Writing an experimental driver (main). It will have a 6-level nested loop, which I'm sure you have never written before (the most I've done was 4-level). 
+But, each level has only a few iterations, so it's not a problem.
+
+5) Running experiments
+
+6) Writing a paper
+*/
+
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
     double red, green, blue;
@@ -283,59 +309,22 @@ double min(PPMCluster *c, PPMPixel d, int size)
     return totalRGB;
 }
 
-PPMImage* kMeansPlusPlus(PPMImage *img, int numColors, double p_value, int num_passes)
+//Maximin function for initialization
+void Maximin(PPMImage *img, PPMCluster* clusters, int numColors)
 {
-    
-}
-
-PPMImage* macqueenClustering(PPMImage *img, int numColors, double p_value, int num_passes)
-{
-    //Variable Declarations/initializations
-    int numPixels = (img->height * img->width);
-    PPMCluster *clusters;
-    int randomNumber;
-    int numFixedColors;
-    int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
-    int randPixNum;
-    int index = 0;
-    PPMPixel closest;
-    double delta = 0.0;
-    double totalRGB = 0.00;
-    int nearest;
-    double tempTotalRGB;
-    int counter = 0;
-    int old_size;
-    int new_size;
+    //Some variables
     PPMCluster *cluster;
+    double delta1;
+    double delta2;
+    double dist;
+    double dmax;
+    int initCounter = 0;
+    double* dj;
     PPMPixel pixel;
-    PPMImage *imag;
-    PPMPixel *newPixel;
     int tempIteration = 0;
-    int total = 1000000000; //A really high number
-    double distance = 0.0;
-    double tempDistance = 0.0;
-    double tempTotalDist = 0.0;
+    int numPixels = (img->height * img->width);
+    dj = malloc(numPixels * sizeof (double));
 
-    //Filling an array with random numbers for number of colors to be quantized down to
-    numFixedColors = numColors;
-
-    //Make an array of clusters
-    clusters = malloc(numFixedColors * sizeof(*clusters));
-
-    //Initialize each center to a random value and give each cluster a size of 1 -- RANDOM METHOD OF INITIALIZATION
-    /*
-    for (int i = 0; i < numFixedColors; i++)
-    {
-        randPixNum = (int) (rand() / (RAND_MAX + 1.0) * numPixels);
-        cluster = &clusters[i];
-        pixel = img->data[randPixNum];
-        cluster->center.red = pixel.red;
-        cluster->center.green = pixel.green;
-        cluster->center.blue = pixel.blue;
-        cluster->size = 1;
-    }
-    */
-   
     //Initialize first cluster
     cluster = &clusters[0];
     cluster->center.red = r;
@@ -343,49 +332,14 @@ PPMImage* macqueenClustering(PPMImage *img, int numColors, double p_value, int n
     cluster->center.blue = b;
     cluster->size = 1;
 
-    /*
-    double min(PPMCluster *c, PPMPixel d, int size)
-{
-    double delta;
-    PPMCluster *cluster;
-    double tempTotalRGB;
-    double totalRGB = 100000000000;
-
-    for (int i = 0; i < size; i++)
+    for (int j = 0; j < numPixels; j++)
     {
-        cluster = &c[i];
-        delta = d.red - cluster->center.red;
-        tempTotalRGB = (delta * delta);
-        delta = d.green - cluster->center.green;
-        tempTotalRGB += (delta * delta);
-        delta = d.blue - cluster->center.blue;
-        tempTotalRGB += (delta * delta);
-
-        if (tempTotalRGB < totalRGB)
-        {
-            totalRGB = tempTotalRGB;
-        }
+        dj[j] = DIST_MAX;
     }
-
-    return totalRGB;
-}
-*/
-double delta1;
-double delta2;
-double dist;
-double dmax;
-int initCounter = 0;
-double* dj;
-dj = malloc(numPixels * sizeof (double));
-
-for (int j = 0; j < numPixels; j++)
-{
-    dj[j] = DIST_MAX;
-}
 
     //Next elements chosen based on min-max approach
     //Large loop is done one time for each cluster
-    for (int i = 0 + 1; i < numFixedColors; i++)
+    for (int i = 0 + 1; i < numColors; i++)
     {
         dmax = -DIST_MAX;
         //All other clusters chosen using min-max method
@@ -425,27 +379,64 @@ for (int j = 0; j < numPixels; j++)
         cluster->center.blue = pixel.blue;
         cluster->size = 1;
     }
-/*
-    //Now print the centers
-    for (int i = 0; i < numFixedColors; i++)
-    {
-        cluster = &clusters[i];
-        double re = cluster->center.red;
-        double gr = cluster->center.green;
-        double bl = cluster->center.blue;
+}
 
-        printf("(");
-        printf("%f", re); printf(",");
-        printf("%f", gr); printf(",");
-        printf("%f", bl);
-        printf(")");
+//K-means++ function for cluster initialization
+void K_Means_Plus_Plus(PPMImage *img, PPMCluster* clusters, int numColors)
+{
+    
+}
+
+//Data clustering function where all of the magic happens
+PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass)
+{
+    //Variable Declarations/initializations
+    int numPixels = (img->height * img->width);
+    PPMCluster *clusters;
+    int randomNumber;
+    int numFixedColors;
+    int terminate = numPixels * numPass; //terminates after iterating over every pixel in the image
+    int randPixNum;
+    int index = 0;
+    PPMPixel closest;
+    double delta = 0.0;
+    double totalRGB = 0.00;
+    int nearest;
+    double tempTotalRGB;
+    int counter = 0;
+    int old_size;
+    int new_size;
+    PPMCluster *cluster;
+    PPMPixel pixel;
+    PPMImage *imag;
+    PPMPixel *newPixel;
+    int tempIteration = 0;
+    int total = 1000000000; //A really high number
+    double distance = 0.0;
+    double tempDistance = 0.0;
+    double tempTotalDist = 0.0;
+
+    //Allocate memory for an array of clusters
+    clusters = malloc(numColors * sizeof(*clusters));
+
+    //Initialize clusters based on input from user
+    if (init == 0)
+    {
+        //Call maximin function to initialize clusters
+        Maximin(img, clusters, numColors);
     }
-*/
+    else if (init == 1)
+    {
+        //Call k-means++ function to initialize that way
+        K_Means_Plus_Plus(img, clusters, numColors);
+    }
+
     //Now time for data clustering using k-means
     //Terminate when criteria is met
     for (index = 0; index < terminate; index++)
      {
-        //Now, select a random pixel from the pixel array (pick a random pixel from the image)
+        
+        //Choose a random number (quasi vs pseudo is determined by the seeding already done)
         randPixNum = (int) (genrand_real2() * numPixels);
 
         //Set totalRGB to be the highest it can be
@@ -455,7 +446,7 @@ for (int j = 0; j < numPixels; j++)
         pixel = img->data[randPixNum];
 
         //Next, find the closest pixel to this pixel in the centers array
-        for (int i = 0; i < numFixedColors; i++) {
+        for (int i = 0; i < numColors; i++) {
             cluster = &clusters[i];
             delta = pixel.red - cluster->center.red;
             tempTotalRGB = (delta * delta);
@@ -475,13 +466,6 @@ for (int j = 0; j < numPixels; j++)
         cluster = &clusters[nearest];
         old_size = cluster->size;
         new_size = old_size + 1;
-        double p_val = 0.56;
-        
-        /*
-        cluster->center.red = ((old_size * cluster->center.red) + pixel.red ) / (double) new_size;
-        cluster->center.green = ((old_size * cluster->center.green) + pixel.green ) / (double) new_size;
-        cluster->center.blue = ((old_size * cluster->center.blue) + pixel.blue ) / (double) new_size;
-        */
 
        double rate = pow ( new_size, -p_val );
        cluster->center.red = rate * pixel.red + ( 1 - rate ) * cluster->center.red;
@@ -502,7 +486,7 @@ for (int j = 0; j < numPixels; j++)
         totalRGB = DIST_MAX;
         pixel = img->data[i];
         
-        for (int j = 0; j < numFixedColors; j++) 
+        for (int j = 0; j < numColors; j++) 
         {
             cluster = &clusters[j];
             delta = pixel.red - cluster->center.red;
@@ -559,6 +543,109 @@ double computeError(PPMImage *image1, PPMImage *image2)
     return err;
 }
 
+
+void tableGen()
+{
+    //Some variables
+    PPMImage* img;
+    PPMImage* img2;
+    double err;
+    struct timeval  tv1, tv2;
+    char *filenames[8] = {"baboon.ppm", "fish.ppm", "girl.ppm", "goldhill.ppm", "kodim05.ppm", "kodim23.ppm", "peppers.ppm", "pills.ppm"};
+    const int numColors[4] = {32, 64, 128, 256};
+    const int inits[2] = {0, 1}; //Maximin followed by k-means++
+    const int pres[2] = {0, 1}; //Pseudorandom followed by Quasirandom
+    const double learning[6] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    const double passes[4] = {0.25, 0.5, 0.75, 1.0};
+    char* filename;
+    int numColor;
+    int init;
+    int present;
+    double learn;
+    double pass;
+
+    //Random number generator (for selecting random centers)
+    init_genrand(4357U);
+
+    //Now generate table headers for the new table
+    printf("Filename"); printf("\t"); printf("Num_Colors"); printf("\t");
+    printf("Initialize"); printf("\t"); printf("Presentation"); printf("\t");
+    printf("Learning"); printf("\t"); printf("Passes"); printf("\t");
+    printf("MSE"); printf("\n");
+
+    //Start the timer
+    gettimeofday(&tv1, NULL);
+
+    //Create a 6-nested loop with 3,072 combinations for printing a table
+    //Number of images
+    for (int i = 0; i < 8; i++)
+    {
+        //Read in the image with the specified filename
+        filename = filenames[i];
+        img = readPPM(filename);
+
+        //Now number of colors
+        for (int b = 0; b < 4; b++)
+        {
+            numColor = numColors[b];
+            //Initialization
+            for (int c = 0; c < 2; c++)
+            {
+                init = inits[c];
+                //Presentation
+                for (int d = 0; d < 2; d++)
+                {
+                    present = pres[d];
+
+                    //Random number generator (for selecting random centers)
+                    //Seeding depends on the presentation order 
+                    if (present == 0)
+                    {
+                        //Default seed for predicatble results
+                        init_genrand(4357U);
+                    }
+                    else if (present == 1)
+                    {
+                        //Random seed based on the time since Jan. 1 1970
+                        init_genrand(time(NULL));
+                    }
+                    //Learning
+                    for (int e = 0; e < 6; e++)
+                    {
+                        learn = learning[e];
+                        //Passes
+                        for (int f = 0; f < 4; f++)
+                        {
+                            pass = passes[f];
+
+                            //Deep within the loop, do the clustering of the specified options
+                            img2 = cluster(img, numColor, init, learn, pass);
+
+                            //Calcule the MSE and save off into a variable
+                            err = computeError(img, img2);
+
+                            //Now, print out the information to the table
+                            printf("%s", filename); printf("\t"); printf("%d", numColor); printf("\t");
+                            printf("%d", init); printf("\t"); printf("%d", present); printf("\t");
+                            printf("%f", learn); printf("\t"); printf("%f", pass); printf("\t"); printf("%f", err);
+                            
+                            //Now new line
+                            printf("\n");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //Calculate time and print to console
+    gettimeofday(&tv2, NULL);
+    printf ("Total time = %f seconds\n",
+    (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+    (double) (tv2.tv_sec - tv1.tv_sec));
+
+}
+
 //Main function
 int main(int argc, char *argv[]) {
     //Some variables
@@ -566,9 +653,12 @@ int main(int argc, char *argv[]) {
     PPMImage *image2;
     double err;
     struct timeval  tv1, tv2;
-    int num_colors = atoi(argv[1]);
-    const char* filename = argv[2];
-    int p_value
+    const char* filename = argv[1];
+    int num_colors = atoi(argv[2]);
+    int init = atoi(argv[3]);
+    int presOrder = atoi(argv[4]);
+    double learnRate = atof(argv[5]);
+    double numPass = atof(argv[6]);
     char* outputfilename;
 
     //Start timer
@@ -578,10 +668,20 @@ int main(int argc, char *argv[]) {
     image = readPPM(filename);
 
     //Random number generator (for selecting random centers)
-    init_genrand(4357U);
+    //Seeding depends on the presentation order 
+    if (presOrder == 0)
+    {
+        //Default seed for predicatble results
+        init_genrand(4357U);
+    }
+    else if (presOrder == 1)
+    {
+        //Random seed based on the time since Jan. 1 1970
+        init_genrand(time(NULL));
+    }
 
     //Organize the pixels into clusters
-    image2 = macqueenClustering(image, num_colors);
+    image2 = cluster(image, num_colors, init, learnRate, numPass);
 
     //Create a new image based on the color quantization
     outputfilename = strtok(argv[2], ".");
