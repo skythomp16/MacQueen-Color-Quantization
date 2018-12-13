@@ -391,33 +391,6 @@ void writePPM(const char *filename, PPMImage *img)
     fclose(fp);
 }
 
-//Helper function for min-max clustering
-double min(PPMCluster *c, PPMPixel d, int size)
-{
-    double delta;
-    PPMCluster *cluster;
-    double tempTotalRGB;
-    double totalRGB = DIST_MAX;
-
-    for (int i = 0; i < size; i++)
-    {
-        cluster = &c[i];
-        delta = d.red - cluster->center.red;
-        tempTotalRGB = (delta * delta);
-        delta = d.green - cluster->center.green;
-        tempTotalRGB += (delta * delta);
-        delta = d.blue - cluster->center.blue;
-        tempTotalRGB += (delta * delta);
-
-        if (tempTotalRGB < totalRGB)
-        {
-            totalRGB = tempTotalRGB;
-        }
-    }
-
-    return totalRGB;
-}
-
 //Maximin function for initialization
 void Maximin(PPMImage *img, PPMCluster* clusters, int numColors)
 {
@@ -508,7 +481,7 @@ int ic, ip;
  PPMCluster *cluster;
  PPMCluster *cluster2;
  
- num_bytes = num_dims * sizeof ( double );
+ //num_bytes = num_dims * sizeof ( double );
 
   dist_to_center = ( double * ) malloc ( num_points * sizeof ( double ) );
 
@@ -536,7 +509,7 @@ int ic, ip;
  /* Choose the remaining ( NUM_CLUSTERS - 1 ) centers */
  for ( ic = 0 + 1; ic < numFixedColors; ic++ )
   {
-   rand_val = bounded_rand (1) * sse;
+   rand_val = genrand_real2() * sse;
 
    /* Select a point with a probability proportional to its contribution to SSE */
    for ( ip = 0; ip < num_points - 1; ip++ ) 
@@ -552,7 +525,12 @@ int ic, ip;
     }
 
    /* Assign the randomly picked point to the current center */
-   cluster->center = img->data[ip];
+   cluster = &clusters[ic];
+   pixel = img->data[ip];
+    cluster->center.red = pixel.red;
+    cluster->center.green = pixel.green;
+    cluster->center.blue = pixel.blue;
+
    for ( ip = 0; ip < num_points; ip++ )
     {
     pixel = img->data[ip];
@@ -578,10 +556,10 @@ int ic, ip;
 
    /* Assign the new center its value */
    //memcpy ( img->data[ic], curr_center, num_bytes );
-   cluster2 = &clusters[ic];
-   cluster2->center.red = cluster->center.red;
-    cluster2->center.green = cluster->center.green;
-    cluster2->center.blue = cluster->center.blue;
+   //cluster2 = &clusters[ic];
+   //cluster2->center.red = cluster->center.red;
+   // cluster2->center.green = cluster->center.green;
+   // cluster2->center.blue = cluster->center.blue;
   }
 
  #ifdef FREE_MEM
@@ -638,7 +616,7 @@ PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double n
     else if (init == 1)
     {
         //Call k-means++ function to initialize that way
-        K_Means_Plus_Plus(img, clusters, numFixedColors);
+        K_Means_Plus_Plus(img, clusters, numColors);
     }
 
     //Now time for data clustering using k-means
