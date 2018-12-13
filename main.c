@@ -49,7 +49,10 @@ typedef struct {
     PPMPixel *data;
 } PPMImage;
 
-#define CREATOR "Rewritten by Skyler Thompson"
+/* fix for sobol ulong error */
+typedef unsigned long ulong;
+
+#define CREATOR "Rewritten for quantization"
 #define RGB_COMPONENT_COLOR 255
 #define DIST_MAX 195075
 
@@ -58,6 +61,8 @@ typedef struct {
 #define MATRIX_A 0x9908b0dfUL   /* constant vector a */
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
+
+#define MAXBIT 30
 
 static unsigned long mt[N]; /* the array for the state vector  */
 static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
@@ -124,6 +129,110 @@ double genrand_real2(void)
 {
     return genrand_int32()*(1.0/4294967296.0); 
     /* divided by 2^32 */
+}
+
+/* Function for generating a bounded random integer between 0 and range  */
+uint32_t bounded_rand(uint32_t range) {
+    uint32_t x = genrand_int32();  
+    uint64_t m = ( ( uint64_t ) x ) * ( ( uint64_t ) range );
+    uint32_t l = ( uint32_t ) m;
+    if (l < range) {
+        uint32_t t = -range;
+        if (t >= range) {
+            t -= range;
+            if (t >= range) 
+                t %= range;
+        }
+        while (l < t) {
+            x = genrand_int32();  
+            m = ( ( uint64_t ) x ) * ( ( uint64_t ) range );
+            l = ( uint32_t ) m;
+        }
+    }
+    return m >> 32;
+}
+
+/* Returns two quasi-random numbers for a 2-dimensional Sobol
+   sequence. Adapted from Numerical Recipies in C. */
+
+/* X and Y will be in [0,1] range */
+void sobseq ( double *x, double *y ) 
+{
+ int j, k, l;
+ ulong i, im, ipp;
+
+ /* The following variables are "static" since we want their
+   values to remain stored after the function returns. These
+   values represent the state of the quasi-random number generator. */
+
+ static double fac;
+ static int init = 0;
+ static ulong ix1, ix2;
+ static ulong in, *iu[2 * MAXBIT + 1];
+ static ulong mdeg[3] = { 0, 1, 2 };
+ static ulong ip[3] = { 0, 0, 1 };
+ static ulong iv[2 * MAXBIT + 1] =
+     { 0, 1, 1, 1, 1, 1, 1, 3, 1, 3, 3, 1, 1, 5, 7, 7, 3, 3, 5, 15, 11, 5, 15, 13, 9 };
+
+ /* Initialise the generator the first time the function is called */
+
+ if ( !init ) 
+  {
+   init = 1;
+   for ( j = 1, k = 0; j <= MAXBIT; j++, k += 2 ) 
+    { 
+     iu[j] = &iv[k]; 
+    }
+    
+   for ( k = 1; k <= 2; k++ ) 
+    {
+     for ( j = 1; j <= mdeg[k]; j++ ) 
+      { 
+       iu[j][k] <<= ( MAXBIT - j ); 
+      }
+
+     for ( j = mdeg[k] + 1; j <= MAXBIT; j++ ) 
+      {
+       ipp = ip[k];
+       i = iu[j - mdeg[k]][k];
+       i ^= ( i >> mdeg[k] );
+
+       for ( l = mdeg[k] - 1; l >= 1; l-- )
+        {
+	 if ( ipp & 1 ) 
+	  { 
+	   i ^= iu[j - l][k]; 
+	  } 
+
+	 ipp >>= 1;
+	}
+
+       iu[j][k] = i;
+      }
+    }
+
+   fac = 1.0 / ( 1L << MAXBIT );
+   in = 0;
+  }
+
+ /* Now calculate the next pair of numbers in the 2-D Sobol sequence */
+
+ im = in;
+ for ( j = 1; j <= MAXBIT; j++ ) 
+  {
+   if ( !( im & 1 ) ) 
+    { 
+     break; 
+    }
+
+   im >>= 1;
+  }
+
+ im = ( j - 1 ) * 2;
+ *x = ( ix1 ^= iv[im + 1] ) * fac;
+ *y = ( ix2 ^= iv[im + 2] ) * fac;
+ 
+ in++;
 }
 
 //Funcion that will read image information in
@@ -382,13 +491,105 @@ void Maximin(PPMImage *img, PPMCluster* clusters, int numColors)
 }
 
 //K-means++ function for cluster initialization
-void K_Means_Plus_Plus(PPMImage *img, PPMCluster* clusters, int numColors)
+void K_Means_Plus_Plus(PPMImage *img, PPMCluster* clusters, int numFixedColors)
 {
-    
+int ic, ip;
+ size_t num_bytes;
+ double dist;
+ double sse = 0.0;
+ double rand_val;
+ double *dist_to_center;
+ int num_points = img->height * img->width;
+ int num_dims = 3;
+ double delta = 0.0;
+ double tempTotalRGB = 0.0;
+ PPMPixel pixel;
+ int randPixNum = 0;
+ PPMCluster *cluster;
+ PPMCluster *cluster2;
+
+ 
+ num_bytes = num_dims * sizeof ( double );
+
+  dist_to_center = ( double * ) malloc ( num_points * sizeof ( double ) );
+
+     /* First center is a randomly picked point */
+ //memcpy ( img->data[0], img->data[bounded_rand ( num_points )], num_bytes );
+    randPixNum = (int) (genrand_real2() * num_points);
+    cluster = &clusters[0];
+    cluster->center = img->data[randPixNum];
+     /* Calculate the current SSE */
+ for ( ip = 0; ip < num_points; ip++ )
+  {
+   //sse += ( dist_to_center[ip] = calc_sqr_euc_dist ( data_set->data[ip], curr_center, num_dims ) );
+    pixel = img->data[ip];
+    delta = pixel.red - cluster->center.red;
+    tempTotalRGB = (delta * delta);
+    delta = pixel.green - cluster->center.green;
+    tempTotalRGB += (delta * delta);
+    delta = pixel.blue - cluster->center.blue;
+    tempTotalRGB += (delta * delta);
+    sse = ( dist_to_center[ip] = tempTotalRGB );
+  }
+
+ /* Choose the remaining ( NUM_CLUSTERS - 1 ) centers */
+ for ( ic = 0 + 1; ic < numFixedColors; ic++ )
+  {
+   rand_val = genrand_real2 ( ) * sse;
+
+   /* Select a point with a probability proportional to its contribution to SSE */
+   for ( ip = 0; ip < num_points - 1; ip++ ) 
+    {
+     if ( rand_val <= dist_to_center[ip] )
+      {
+       break;
+      }
+     else
+      {
+       rand_val -= dist_to_center[ip];
+      }
+    }
+
+   /* Assign the randomly picked point to the current center */
+   cluster = &clusters[ip];
+   for ( ip = 0; ip < num_points; ip++ )
+    {
+    pixel = img->data[ip];
+    delta = pixel.red - cluster->center.red;
+    tempTotalRGB = (delta * delta);
+    delta = pixel.green - cluster->center.green;
+    tempTotalRGB += (delta * delta);
+    delta = pixel.blue - cluster->center.blue;
+    tempTotalRGB += (delta * delta);
+    dist = tempTotalRGB;
+     //dist = calc_sqr_euc_dist ( data_set->data[ip], curr_center, num_dims );
+     
+     /* Current center is closer to this point */
+     /* Update the SSE and the nearest-center distance */
+     
+     if ( dist < dist_to_center[ip] ) 
+      {
+       sse -= ( dist_to_center[ip] - dist );
+       dist_to_center[ip] = dist;
+      }
+      
+    }
+
+   /* Assign the new center its value */
+   //memcpy ( img->data[ic], curr_center, num_bytes );
+   cluster2 = &clusters[ic];
+   cluster2->center = cluster->center;
+  }
+
+ #ifdef FREE_MEM
+ free ( dist_to_center );
+ #endif
+
+ //return center;
 }
 
 //Data clustering function where all of the magic happens
-PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass)
+PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass, int presOrder)
 {
     //Variable Declarations/initializations
     int numPixels = (img->height * img->width);
@@ -415,6 +616,12 @@ PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double n
     double distance = 0.0;
     double tempDistance = 0.0;
     double tempTotalDist = 0.0;
+    double sobx;
+    double soby;
+    int num_rows = img->height;
+    int num_cols = img->width;
+    int row_index;
+    int col_index;
 
     //Allocate memory for an array of clusters
     clusters = malloc(numColors * sizeof(*clusters));
@@ -428,7 +635,7 @@ PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double n
     else if (init == 1)
     {
         //Call k-means++ function to initialize that way
-        K_Means_Plus_Plus(img, clusters, numColors);
+        K_Means_Plus_Plus(img, clusters, numFixedColors);
     }
 
     //Now time for data clustering using k-means
@@ -436,8 +643,30 @@ PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double n
     for (index = 0; index < terminate; index++)
      {
         
-        //Choose a random number (quasi vs pseudo is determined by the seeding already done)
-        randPixNum = (int) (genrand_real2() * numPixels);
+        //Choose a random number (quasi vs pseudo determined by user)
+        if (presOrder == 0)
+        {
+            //Quasirandom
+            sobseq ( &sobx, &soby );
+
+            row_index = ( int ) ( soby * num_rows + 0.5 ); /* round */
+            if ( row_index == num_rows )
+            {
+            row_index--;
+            }
+
+            col_index = ( int ) ( sobx * num_cols + 0.5 ); /* round */
+            if ( col_index == num_cols )
+            {
+            col_index--;
+            }
+
+            randPixNum = ( row_index * num_cols + col_index );
+        }
+        else {
+            //Pseudorandom
+            randPixNum = (int) (genrand_real2() * numPixels);
+        }
 
         //Set totalRGB to be the highest it can be
         totalRGB = DIST_MAX; // 3 * 255 * 255 
@@ -554,7 +783,7 @@ void tableGen()
     char *filenames[8] = {"baboon.ppm", "fish.ppm", "girl.ppm", "goldhill.ppm", "kodim05.ppm", "kodim23.ppm", "peppers.ppm", "pills.ppm"};
     const int numColors[4] = {32, 64, 128, 256};
     const int inits[2] = {0, 1}; //Maximin followed by k-means++
-    const int pres[2] = {0, 1}; //Pseudorandom followed by Quasirandom
+    const int pres[2] = {0, 1}; //Quasirandom followed by Pseudorandom
     const double learning[6] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
     const double passes[4] = {0.25, 0.5, 0.75, 1.0};
     char* filename;
@@ -596,19 +825,6 @@ void tableGen()
                 for (int d = 0; d < 2; d++)
                 {
                     present = pres[d];
-
-                    //Random number generator (for selecting random centers)
-                    //Seeding depends on the presentation order 
-                    if (present == 0)
-                    {
-                        //Default seed for predicatble results
-                        init_genrand(4357U);
-                    }
-                    else if (present == 1)
-                    {
-                        //Random seed based on the time since Jan. 1 1970
-                        init_genrand(time(NULL));
-                    }
                     //Learning
                     for (int e = 0; e < 6; e++)
                     {
@@ -619,7 +835,7 @@ void tableGen()
                             pass = passes[f];
 
                             //Deep within the loop, do the clustering of the specified options
-                            img2 = cluster(img, numColor, init, learn, pass);
+                            img2 = cluster(img, numColor, init, learn, pass, present);
 
                             //Calcule the MSE and save off into a variable
                             err = computeError(img, img2);
@@ -655,10 +871,10 @@ int main(int argc, char *argv[]) {
     struct timeval  tv1, tv2;
     const char* filename = argv[1];
     int num_colors = atoi(argv[2]);
-    int init = atoi(argv[3]);
-    int presOrder = atoi(argv[4]);
-    double learnRate = atof(argv[5]);
-    double numPass = atof(argv[6]);
+    int init = atoi(argv[3]); //0 for maximin and 1 for k-means++
+    int presOrder = atoi(argv[4]); //0 for quasirandom and 1 for pseudorandom
+    double learnRate = atof(argv[5]); //p_val
+    double numPass = atof(argv[6]); //Can be partial hence the double data type
     char* outputfilename;
 
     //Start timer
@@ -667,21 +883,11 @@ int main(int argc, char *argv[]) {
     //Create a new image object and read the image in
     image = readPPM(filename);
 
-    //Random number generator (for selecting random centers)
-    //Seeding depends on the presentation order 
-    if (presOrder == 0)
-    {
-        //Default seed for predicatble results
-        init_genrand(4357U);
-    }
-    else if (presOrder == 1)
-    {
-        //Random seed based on the time since Jan. 1 1970
-        init_genrand(time(NULL));
-    }
+    //Random seed based on the time since Jan. 1 1970
+    init_genrand(time(NULL));
 
     //Organize the pixels into clusters
-    image2 = cluster(image, num_colors, init, learnRate, numPass);
+    image2 = cluster(image, num_colors, init, learnRate, numPass, presOrder);
 
     //Create a new image based on the color quantization
     outputfilename = strtok(argv[2], ".");
