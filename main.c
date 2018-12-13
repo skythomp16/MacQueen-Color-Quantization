@@ -507,7 +507,6 @@ int ic, ip;
  int randPixNum = 0;
  PPMCluster *cluster;
  PPMCluster *cluster2;
-
  
  num_bytes = num_dims * sizeof ( double );
 
@@ -517,7 +516,9 @@ int ic, ip;
  //memcpy ( img->data[0], img->data[bounded_rand ( num_points )], num_bytes );
     randPixNum = (int) (genrand_real2() * num_points);
     cluster = &clusters[0];
-    cluster->center = img->data[randPixNum];
+    cluster->center.red = img->data[randPixNum].red;
+    cluster->center.green = img->data[randPixNum].green;
+    cluster->center.blue = img->data[randPixNum].blue;
      /* Calculate the current SSE */
  for ( ip = 0; ip < num_points; ip++ )
   {
@@ -529,13 +530,13 @@ int ic, ip;
     tempTotalRGB += (delta * delta);
     delta = pixel.blue - cluster->center.blue;
     tempTotalRGB += (delta * delta);
-    sse = ( dist_to_center[ip] = tempTotalRGB );
+    sse += ( dist_to_center[ip] = tempTotalRGB );
   }
 
  /* Choose the remaining ( NUM_CLUSTERS - 1 ) centers */
  for ( ic = 0 + 1; ic < numFixedColors; ic++ )
   {
-   rand_val = genrand_real2 ( ) * sse;
+   rand_val = bounded_rand (1) * sse;
 
    /* Select a point with a probability proportional to its contribution to SSE */
    for ( ip = 0; ip < num_points - 1; ip++ ) 
@@ -551,7 +552,7 @@ int ic, ip;
     }
 
    /* Assign the randomly picked point to the current center */
-   cluster = &clusters[ip];
+   cluster->center = img->data[ip];
    for ( ip = 0; ip < num_points; ip++ )
     {
     pixel = img->data[ip];
@@ -578,7 +579,9 @@ int ic, ip;
    /* Assign the new center its value */
    //memcpy ( img->data[ic], curr_center, num_bytes );
    cluster2 = &clusters[ic];
-   cluster2->center = cluster->center;
+   cluster2->center.red = cluster->center.red;
+    cluster2->center.green = cluster->center.green;
+    cluster2->center.blue = cluster->center.blue;
   }
 
  #ifdef FREE_MEM
