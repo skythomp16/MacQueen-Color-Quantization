@@ -6,32 +6,6 @@
 #include <sys/time.h>
 #include <string.h>
 
-/*
-1) Number of images (8) <-- images in a file
-2) Number of colors (4): 32, 64, 128, 256 <-- easy to implement
-3) Initialization (2): maximin, k-means++
-4) Presentation order (2): pseudo-random, quasi-random
-5) Learning rate (6): 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
-6) Number of passes (4): 0.25, 0.5, 0.75, 1.0
-
-So, total 8 x 4 x 2 x 2 x 6 x 4 = 3,072
-
-1) K-means++: You should be able to plug-in my code easily. You just have to make sure that it gives at least as good results as maximin. Actually, k-means++ usually gives better.
-
-2) Drawing uniform random integers from a certain range: That code I sent you should work. You just have to test it in a separate program to make sure. 
-Pluging in a randomized code that is untested is a recipe for disaster. You had that problem earlier, which was very difficult to identify.
-
-3) Pseudorandom sampling: This is quite tricky. The algorithm is short, but complex (it requires bit operations because it has to be efficient). 
-I will give you my copy (which is adapted from a famous book). Solve issues (1) and (2) first and then we will deal with issue (3).
-
-4) Writing an experimental driver (main). It will have a 6-level nested loop, which I'm sure you have never written before (the most I've done was 4-level). 
-But, each level has only a few iterations, so it's not a problem.
-
-5) Running experiments
-
-6) Writing a paper
-*/
-
 //Structures for each individual pixel -- for reading purposes to keep each number unsigned.
 typedef struct {
     double red, green, blue;
@@ -767,21 +741,27 @@ void tableGen()
     const int pres[2] = {0, 1}; //Quasirandom followed by Pseudorandom
     const double learning[6] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
     const double passes[4] = {0.25, 0.5, 0.75, 1.0};
-    char* filename;
     int numColor;
     int init;
     int present;
+    char* filename;
     double learn;
     double pass;
+    FILE *fp;
+    fp = fopen("data1.csv", "w+");
+    fprintf(fp, "%s, %s, %s, %s, %s, %s, %s \n", "Filename", "Num_Colors", "Initialize", "Presentation", "Learning", "Passes", "MSE\n");
+
 
     //Random number generator (for selecting random centers)
     init_genrand(4357U);
 
     //Now generate table headers for the new table
+    /*
     printf("Filename"); printf("\t"); printf("Num_Colors"); printf("\t");
     printf("Initialize"); printf("\t"); printf("Presentation"); printf("\t");
     printf("Learning"); printf("\t"); printf("Passes"); printf("\t");
     printf("MSE"); printf("\n");
+    */
 
     //Start the timer
     gettimeofday(&tv1, NULL);
@@ -822,18 +802,21 @@ void tableGen()
                             err = computeError(img, img2);
 
                             //Now, print out the information to the table
-                            printf("%s", filename); printf("\t"); printf("%d", numColor); printf("\t");
-                            printf("%d", init); printf("\t"); printf("%d", present); printf("\t");
-                            printf("%f", learn); printf("\t"); printf("%f", pass); printf("\t"); printf("%f", err);
-                            
+                            //printf("%s", filename); printf("\t"); printf("%d", numColor); printf("\t");
+                            //printf("%d", init); printf("\t"); printf("%d", present); printf("\t");
+                            //printf("%f", learn); printf("\t"); printf("%f", pass); printf("\t"); printf("%f", err);
+                            fprintf(fp, "%s, %d, %d, %d, %f, %f, %f \n", filename, numColor, init, present, learn, pass, err);
                             //Now new line
-                            printf("\n");
+                            //printf("\n");
                         }
                     }
                 }
             }
         }
     }
+
+    //close file
+    fclose(fp);
 
     //Calculate time and print to console
     gettimeofday(&tv2, NULL);
@@ -879,15 +862,16 @@ int main(int argc, char *argv[]) {
 
     //Next, compute the Mean Squared Error and print to console
     err = computeError(image, image2);
-    printf("%f\n", err);
+    //printf("%f\n", err);
+    tableGen();
 
     //Calculate time and print to console
     gettimeofday(&tv2, NULL);
 
-    printf ("Total time = %f seconds\n",
+    /*printf ("Total time = %f seconds\n",
             (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
             (double) (tv2.tv_sec - tv1.tv_sec));
-
+    */
     //Finally, free up all memory allocated in the program (that hasn't already been freed)
     free(image->data);
     free(image2->data);
