@@ -748,8 +748,8 @@ void tableGen()
     double learn;
     double pass;
     FILE *fp;
-    fp = fopen("data1.csv", "w+");
-    fprintf(fp, "%s, %s, %s, %s, %s, %s, %s \n", "Filename", "Num_Colors", "Initialize", "Presentation", "Learning", "Passes", "MSE\n");
+    fp = fopen("data.csv", "w+");
+    fprintf(fp, "Filename, Num_Colors, Initialize, Presentation, Learning, Passes, MSE\n");
 
 
     //Random number generator (for selecting random centers)
@@ -768,6 +768,7 @@ void tableGen()
 
     //Create a 6-nested loop with 3,072 combinations for printing a table
     //Number of images
+    
     for (int i = 0; i < 8; i++)
     {
         //Read in the image with the specified filename
@@ -814,6 +815,7 @@ void tableGen()
             }
         }
     }
+    
 
     //close file
     fclose(fp);
