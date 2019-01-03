@@ -749,7 +749,7 @@ void tableGen()
     double pass;
     FILE *fp;
     fp = fopen("data.csv", "w+");
-    fprintf(fp, "Filename, Num_Colors, Initialize, Presentation, Learning, Passes, MSE\n");
+    fprintf(fp, "Filename, Num_Colors, Learning, Passes, MSE\n");
 
 
     //Random number generator (for selecting random centers)
@@ -779,38 +779,28 @@ void tableGen()
         for (int b = 0; b < 4; b++)
         {
             numColor = numColors[b];
-            //Initialization
-            for (int c = 0; c < 2; c++)
+            //Learning
+            for (int e = 0; e < 6; e++)
             {
-                init = inits[c];
-                //Presentation
-                for (int d = 0; d < 2; d++)
+                learn = learning[e];
+                //Passes
+                for (int f = 0; f < 4; f++)
                 {
-                    present = pres[d];
-                    //Learning
-                    for (int e = 0; e < 6; e++)
-                    {
-                        learn = learning[e];
-                        //Passes
-                        for (int f = 0; f < 4; f++)
-                        {
-                            pass = passes[f];
+                    pass = passes[f];
 
-                            //Deep within the loop, do the clustering of the specified options
-                            img2 = cluster(img, numColor, init, learn, pass, present);
+                    //Deep within the loop, do the clustering of the specified options
+                    img2 = cluster(img, numColor, 0, 0, pass, present);
 
-                            //Calcule the MSE and save off into a variable
-                            err = computeError(img, img2);
+                    //Calcule the MSE and save off into a variable
+                    err = computeError(img, img2);
 
-                            //Now, print out the information to the table
-                            //printf("%s", filename); printf("\t"); printf("%d", numColor); printf("\t");
-                            //printf("%d", init); printf("\t"); printf("%d", present); printf("\t");
-                            //printf("%f", learn); printf("\t"); printf("%f", pass); printf("\t"); printf("%f", err);
-                            fprintf(fp, "%s, %d, %d, %d, %f, %f, %f \n", filename, numColor, init, present, learn, pass, err);
-                            //Now new line
-                            //printf("\n");
-                        }
-                    }
+                    //Now, print out the information to the table
+                    //printf("%s", filename); printf("\t"); printf("%d", numColor); printf("\t");
+                    //printf("%d", init); printf("\t"); printf("%d", present); printf("\t");
+                    //printf("%f", learn); printf("\t"); printf("%f", pass); printf("\t"); printf("%f", err);
+                    fprintf(fp, "%s, %d, %f, %f, %f \n", filename, numColor, learn, pass, err);
+                    //Now new line
+                    //printf("\n");
                 }
             }
         }
