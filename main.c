@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 #include <math.h>
 #include <time.h>
@@ -739,7 +740,7 @@ void tableGen()
     const int numColors[4] = {32, 64, 128, 256};
     const int inits[2] = {0, 1}; //Maximin followed by k-means++
     const int pres[2] = {0, 1}; //Quasirandom followed by Pseudorandom
-    const double learning[6] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+    const double learning[6] = {0.4, 0.5, 0.6, 0.7, 0.4, 0.5};
     const double passes[4] = {0.25, 0.5, 0.75, 1.0};
     int numColor;
     int init;
@@ -749,7 +750,15 @@ void tableGen()
     double pass;
     FILE *fp;
     fp = fopen("data.csv", "w+");
-    fprintf(fp, "Filename, Num_Colors, Learning, Passes, MSE\n");
+
+    //Loop through and print header 24 times
+    for (int i = 0; i < 8; i++)
+    {
+        fprintf(fp, "Filename, Num_Colors, Learning, MSE, ERR , , ");
+    }
+
+    //Now print a new line
+    fprintf(fp, "\n");
 
 
     //Random number generator (for selecting random centers)
@@ -765,7 +774,60 @@ void tableGen()
 
     //Start the timer
     gettimeofday(&tv1, NULL);
+    
+    //Variables for loops
+    int k = 0; 
+    int l = 0;
 
+    //Create a new loop that loops through and prints each file with its numbers side by side
+    //We need a loop of 24 here because each image/color combo will be 4 rows and there will be 8 images
+    for (int i = 0; i < 24; i++)
+    {
+
+
+        for (int j = 0; j < 8; j++)
+        {
+            //First, grab a file
+            filename = filenames[j];
+            img = readPPM(filename);
+
+            //Now, grab a color
+            numColor = numColors[k];
+
+            //Now grab a learning rate
+            learn = learning[l];
+
+            //Deep within the loop, do the clustering of the specified options
+            //PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass, int presOrder)
+            img2 = cluster(img, numColor, 0, learn, 1, 0);
+
+            //Calcule the MSE and save off into a variable
+            err = computeError(img, img2);
+
+            //Now do the printing
+            fprintf(fp, "%s, %d, %f, %f", filename, numColor, learn, err);
+            
+            //Leave a couple of column's worth of space
+            fprintf(fp, ", , ,");
+
+        }
+
+            free(img);
+            free(img2);
+
+        l++;
+        //When the learning rate hits 4, reset the counter and flip the number of colors to a higher number  
+        if (l % 4 == 0)
+        {
+            l = 0;
+            k++;
+        }
+
+        //Only here should we make a new line
+        fprintf(fp, "\n");
+    }
+
+/*
     //Create a 6-nested loop with 3,072 combinations for printing a table
     //Number of images
     
@@ -806,6 +868,7 @@ void tableGen()
         }
     }
     
+    */
 
     //close file
     fclose(fp);
@@ -825,12 +888,16 @@ int main(int argc, char *argv[]) {
     PPMImage *image2;
     double err;
     struct timeval  tv1, tv2;
+
+    
     const char* filename = argv[1];
     int num_colors = atoi(argv[2]);
     int init = atoi(argv[3]); //0 for maximin and 1 for k-means++
     int presOrder = atoi(argv[4]); //0 for quasirandom and 1 for pseudorandom
     double learnRate = atof(argv[5]); //p_val
     double numPass = atof(argv[6]); //Can be partial hence the double data type
+    
+
     char* outputfilename;
 
     //Start timer
@@ -846,24 +913,27 @@ int main(int argc, char *argv[]) {
     image2 = cluster(image, num_colors, init, learnRate, numPass, presOrder);
 
     //Create a new image based on the color quantization
+    
     outputfilename = strtok(argv[2], ".");
     outputfilename = strcat(outputfilename, "_");
     outputfilename = strcat(outputfilename, argv[1]);
     outputfilename = strcat(outputfilename, ".ppm");
     writePPM(outputfilename, image2);
-
+    
     //Next, compute the Mean Squared Error and print to console
     err = computeError(image, image2);
-    //printf("%f\n", err);
+    printf("%f\n", err);
+
+    //Generate a table csv file
     tableGen();
 
     //Calculate time and print to console
     gettimeofday(&tv2, NULL);
 
-    /*printf ("Total time = %f seconds\n",
+    printf ("Total time = %f seconds\n",
             (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
             (double) (tv2.tv_sec - tv1.tv_sec));
-    */
+    
     //Finally, free up all memory allocated in the program (that hasn't already been freed)
     free(image->data);
     free(image2->data);
