@@ -740,7 +740,7 @@ void tableGen()
     const int numColors[4] = {32, 64, 128, 256};
     const int inits[2] = {0, 1}; //Maximin followed by k-means++
     const int pres[2] = {0, 1}; //Quasirandom followed by Pseudorandom
-    const double learning[6] = {0.4, 0.5, 0.6, 0.7, 0.4, 0.5};
+    const double learning[6] = {0.5, 0.6, 0.7, 0.8};
     const double passes[4] = {0.25, 0.5, 0.75, 1.0};
     int numColor;
     int init;
@@ -752,9 +752,9 @@ void tableGen()
     fp = fopen("data.csv", "w+");
 
     //Loop through and print header 24 times
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 24; i++)
     {
-        fprintf(fp, "Filename, Num_Colors, Learning, MSE, ERR , , ");
+        fprintf(fp, "Filename, Num_Colors, Learning, Passes, MSE, ERR , , ");
     }
 
     //Now print a new line
@@ -778,6 +778,7 @@ void tableGen()
     //Variables for loops
     int k = 0; 
     int l = 0;
+    int p = 0;
 
     //Create a new loop that loops through and prints each file with its numbers side by side
     //We need a loop of 24 here because each image/color combo will be 4 rows and there will be 8 images
@@ -785,37 +786,43 @@ void tableGen()
     {
 
 
-        for (int j = 0; j < 8; j++)
+        for (int j = 0; j < 24; j++)
         {
-            //First, grab a file
-            filename = filenames[j];
-            img = readPPM(filename);
+            for (int g; g < 8; g++)
+            {
+                //First, grab a file
+                filename = filenames[j];
+                img = readPPM(filename);
 
-            //Now, grab a color
-            numColor = numColors[k];
+                //Now, grab a color
+                numColor = numColors[k];
 
-            //Now grab a learning rate
-            learn = learning[l];
+                //Now grab a learning rate
+                learn = learning[l];
 
-            //Deep within the loop, do the clustering of the specified options
-            //PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass, int presOrder)
-            img2 = cluster(img, numColor, 0, learn, 1, 0);
+                //Now grab a number of passes
+                pass = passes[p];
 
-            //Calcule the MSE and save off into a variable
-            err = computeError(img, img2);
+                //Deep within the loop, do the clustering of the specified options
+                //PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass, int presOrder)
+                img2 = cluster(img, numColor, 0, learn, 1, 0);
 
-            //Now do the printing
-            fprintf(fp, "%s, %d, %f, %f", filename, numColor, learn, err);
-            
-            //Leave a couple of column's worth of space
-            fprintf(fp, ", , ,");
+                //Calcule the MSE and save off into a variable
+                err = computeError(img, img2);
 
+                //Now do the printing
+                fprintf(fp, "%s, %d, %f, %f", filename, numColor, learn, err);
+                
+                //Leave a couple of column's worth of space
+                fprintf(fp, ", , ,");
+            }
         }
 
             free(img);
             free(img2);
 
         l++;
+        p++;
         //When the learning rate hits 4, reset the counter and flip the number of colors to a higher number  
         if (l % 4 == 0)
         {
