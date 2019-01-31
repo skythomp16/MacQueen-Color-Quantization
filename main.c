@@ -736,9 +736,10 @@ void tableGen()
     PPMImage* img2;
     double err;
     struct timeval  tv1, tv2;
-    char *filenames[24] = {"baboon.ppm", "fish.ppm", "girl.ppm", "goldhill.ppm", "kodim05.ppm", "kodim23.ppm", "peppers.ppm", "pills.ppm",
-                        "baboon.ppm", "fish.ppm", "girl.ppm", "goldhill.ppm", "kodim05.ppm", "kodim23.ppm", "peppers.ppm", "pills.ppm",
-                        "baboon.ppm", "fish.ppm", "girl.ppm", "goldhill.ppm", "kodim05.ppm", "kodim23.ppm", "peppers.ppm", "pills.ppm"};
+    char *filenames[32] = {"baboon.ppm", "baboon.ppm", "baboon.ppm", "baboon.ppm", "fish.ppm", "fish.ppm", "fish.ppm", "fish.ppm",
+                        "girl.ppm", "girl.ppm", "girl.ppm", "girl.ppm", "goldhill.ppm", "goldhill.ppm", "goldhill.ppm", "goldhill.ppm",
+                        "kodim05.ppm", "kodim05.ppm", "kodim05.ppm", "kodim05.ppm", "kodim23.ppm", "kodim23.ppm" , "kodim23.ppm"
+                        , "kodim23.ppm", "peppers.ppm", "peppers.ppm", "peppers.ppm", "peppers.ppm", "pills.ppm", "pills.ppm", "pills.ppm", "pills.ppm"};
     const int numColors[24] = {32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256};
     const int inits[2] = {0, 1}; //Maximin followed by k-means++
     const int pres[2] = {0, 1}; //Quasirandom followed by Pseudorandom
@@ -781,16 +782,24 @@ void tableGen()
     int k = 0; 
     int l = 0;
     int p = 0;
+    int g = 0;
 
     //Create a new loop that loops through and prints each file with its numbers side by side
     //We need a loop of 24 here because each image/color combo will be 4 rows and there will be 8 images
     for (int i = 0; i < 24; i++)
     {
 
-        for (int g = 0; g < 24; g++)
+        for (int j = 0; j < 24; j++)
         {
             //First, grab a file
             filename = filenames[g];
+            g++;
+
+            if (g % 32 == 0)
+            {
+                g = 0;
+            }
+
             img = readPPM(filename);
 
             //Now, grab a color
