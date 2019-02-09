@@ -728,21 +728,18 @@ double computeError(PPMImage *image1, PPMImage *image2)
     return err;
 }
 
-
-void tableGen()
+void tablegen() 
 {
-    //Some variables
+        //Some variables
     PPMImage* img;
     PPMImage* img2;
     double err;
     struct timeval  tv1, tv2;
     char *filenames[32] = {"baboon.ppm", "baboon.ppm", "baboon.ppm", "baboon.ppm", "fish.ppm", "fish.ppm", "fish.ppm", "fish.ppm",
-                        "girl.ppm", "girl.ppm", "girl.ppm", "girl.ppm", "goldhill.ppm", "goldhill.ppm", "goldhill.ppm", "goldhill.ppm",
+                        "lenna.ppm", "lenna.ppm", "lenna.ppm", "lenna.ppm", "goldhill.ppm", "goldhill.ppm", "goldhill.ppm", "goldhill.ppm",
                         "kodim05.ppm", "kodim05.ppm", "kodim05.ppm", "kodim05.ppm", "kodim23.ppm", "kodim23.ppm" , "kodim23.ppm"
                         , "kodim23.ppm", "peppers.ppm", "peppers.ppm", "peppers.ppm", "peppers.ppm", "pills.ppm", "pills.ppm", "pills.ppm", "pills.ppm"};
-    const int numColors[24] = {32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256};
-    const int inits[2] = {0, 1}; //Maximin followed by k-means++
-    const int pres[2] = {0, 1}; //Quasirandom followed by Pseudorandom
+    const int numColors[32] = {32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256};
     const double learning[6] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
     const double passes[4] = {0.25, 0.5, 0.75, 1.0};
     int numColor;
@@ -754,8 +751,8 @@ void tableGen()
     FILE *fp;
     fp = fopen("data.csv", "w+");
 
-    //Loop through and print header 24 times
-    for (int i = 0; i < 24; i++)
+    //Loop through and print header 32 times
+    for (int i = 0; i < 32; i++)
     {
         fprintf(fp, "Filename, Num_Colors, Learning, Passes, MSE, ERR , , ");
     }
@@ -767,44 +764,27 @@ void tableGen()
     //Random number generator (for selecting random centers)
     init_genrand(4357U);
 
-    //Now generate table headers for the new table
-    /*
-    printf("Filename"); printf("\t"); printf("Num_Colors"); printf("\t");
-    printf("Initialize"); printf("\t"); printf("Presentation"); printf("\t");
-    printf("Learning"); printf("\t"); printf("Passes"); printf("\t");
-    printf("MSE"); printf("\n");
-    */
-
     //Start the timer
     gettimeofday(&tv1, NULL);
     
-        //Variables for loops
-    int k = 0; 
+    //Variables for loops
     int l = 0;
     int p = 0;
-    int g = 0;
 
     //Create a new loop that loops through and prints each file with its numbers side by side
     //We need a loop of 24 here because each image/color combo will be 4 rows and there will be 8 images
     for (int i = 0; i < 24; i++)
     {
 
-        for (int j = 0; j < 24; j++)
+        for (int j = 0; j < 32; j++)
         {
             //First, grab a file
-            filename = filenames[g];
-            g++;
-
-            if (g % 32 == 0)
-            {
-                g = 0;
-            }
+            filename = filenames[j];
 
             img = readPPM(filename);
 
             //Now, grab a color
-            numColor = numColors[k];
-            k++;
+            numColor = numColors[j];
 
             //Now grab a learning rate
             learn = learning[l];
@@ -825,68 +805,120 @@ void tableGen()
             //Leave a couple of column's worth of space
             fprintf(fp, ", , ,");
         }
-        
-
-        l++;
+    
         p++;
         
-        //When the learning rate hits 4, reset the counter and flip the number of colors to a higher number  
-        if (l % 6 == 0)
-        {
-            l = 0;
-        }
-
-        if (p % 4 == 0)
+        //Increment learning rate every 4 iterations and reset counter on num passes
+        if (p == 4)
         {
             p = 0;
+            l++;
         }
 
         //Only here should we make a new line
         fprintf(fp, "\n");
     }
 
-/*
-    //Create a 6-nested loop with 3,072 combinations for printing a table
-    //Number of images
-    
+    //close file
+    fclose(fp);
+
+    //Calculate time and print to console
+    gettimeofday(&tv2, NULL);
+    printf ("Total time = %f seconds\n",
+    (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+    (double) (tv2.tv_sec - tv1.tv_sec));
+}
+
+void genMSE()
+{
+    //Some variables
+    PPMImage* img;
+    PPMImage* img2;
+    double err;
+    struct timeval  tv1, tv2;
+    char *filenames[8] = {"baboon.ppm", "fish.ppm", "goldhill.ppm", "kodim05.ppm", "kodim23.ppm", "lenna.ppm", "peppers.ppm", "pills.ppm"};
+    const int numColors[4] = {32, 64, 128, 256};
+    int numColor;
+    char num_colors[1000];
+    char* filename;
+    char* outputfilename;
+    FILE *fp;
+    fp = fopen("mse.csv", "w+");
+
+    //Loop through and print header 8 times
     for (int i = 0; i < 8; i++)
     {
-        //Read in the image with the specified filename
-        filename = filenames[i];
+        fprintf(fp, "Filename, MSE(32), MSE(64), MSE(128), MSE(256), ");
+    }
+
+    //Now print a new line
+    fprintf(fp, "\n");
+
+
+    //Random number generator (for selecting random centers)
+    init_genrand(4357U);
+
+    //Start the timer
+    gettimeofday(&tv1, NULL);
+
+    //Variable for loop
+    int j = 0;
+    int f = 0;
+    double mse[100];
+
+    //Loop through each image 4 times (one for each MSE)
+    for (int i = 0; i < 32; i++)
+    {
+
+        //First, grab a file
+        filename = filenames[f];
+
         img = readPPM(filename);
 
-        //Now number of colors
-        for (int b = 0; b < 4; b++)
+        //Now, grab a color
+        numColor = numColors[j];
+        sprintf(num_colors, "%d", numColor);
+
+        //Deep within the loop, do the clustering of the specified options
+        //PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass, int presOrder)
+        img2 = cluster(img, numColor, 0, 0.5, 1, 0);
+
+        //Output the quantized image
+        outputfilename = strtok(num_colors, ".");
+        outputfilename = strcat(outputfilename, "_");
+        outputfilename = strcat(outputfilename, filename);
+        //outputfilename = strcat(outputfilename, ".ppm");
+        writePPM(outputfilename, img2);
+
+        //Calcule the MSE and save off into a variable
+        err = computeError(img, img2);
+
+        //Now add to the array
+        mse[i] = err;
+
+        j++;
+        if (j == 4)
         {
-            numColor = numColors[b];
-            //Learning
-            for (int e = 0; e < 6; e++)
-            {
-                learn = learning[e];
-                //Passes
-                for (int f = 0; f < 4; f++)
-                {
-                    pass = passes[f];
-
-                    //Deep within the loop, do the clustering of the specified options
-                    img2 = cluster(img, numColor, 0, 0, pass, present);
-
-                    //Calcule the MSE and save off into a variable
-                    err = computeError(img, img2);
-
-                    //Now, print out the information to the table
-                    //printf("%s", filename); printf("\t"); printf("%d", numColor); printf("\t");
-                    //printf("%d", init); printf("\t"); printf("%d", present); printf("\t");
-                    //printf("%f", learn); printf("\t"); printf("%f", pass); printf("\t"); printf("%f", err);
-                    fprintf(fp, "%s, %d, %f, %f, %f \n", filename, numColor, learn, pass, err);
-                    //Now new line
-                    //printf("\n");
-                }
-            }
+            j = 0;
+            f++;
         }
     }
-    
-    */
+
+    //Now do the printing
+    int a, b, c, d;
+    a = 0;
+    b = 1;
+    c = 2; 
+    d = 3;
+    for (int i = 0; i < 8; i++)
+    {
+        fprintf(fp, "%s, %f, %f, %f, %f", filenames[i], mse[a], mse[b], mse[c], mse[d]);
+        a = a + 4;
+        b = b + 4;
+        c = c + 4;
+        d = d + 4;
+        fprintf(fp, ",");
+    }
 
     //close file
     fclose(fp);
@@ -943,7 +975,10 @@ int main(int argc, char *argv[]) {
     printf("%f\n", err);
 
     //Generate a table csv file
-    tableGen();
+    //tableGen();
+
+    //Make a csv file with MSES for every file with the best config (.5, 1)
+    genMSE();
 
     //Calculate time and print to console
     gettimeofday(&tv2, NULL);
