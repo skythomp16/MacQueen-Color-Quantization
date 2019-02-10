@@ -741,7 +741,7 @@ void tablegen()
                         , "kodim23.ppm", "peppers.ppm", "peppers.ppm", "peppers.ppm", "peppers.ppm", "pills.ppm", "pills.ppm", "pills.ppm", "pills.ppm"};
     const int numColors[32] = {32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256, 32, 64, 128, 256};
     const double learning[6] = {0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
-    const double passes[4] = {0.25, 0.5, 0.75, 1.0};
+    const double passes[4] = {1.0, 0.75, 0.5, 0.25};
     int numColor;
     int init;
     int present;
@@ -881,7 +881,7 @@ void genMSE()
 
         //Deep within the loop, do the clustering of the specified options
         //PPMImage* cluster(PPMImage *img, int numColors, int init, double p_val, double numPass, int presOrder)
-        img2 = cluster(img, numColor, 0, 0.5, 1, 0);
+        img2 = cluster(img, numColor, 0, 0.5, 1.0, 0);
 
         //Output the quantized image
         outputfilename = strtok(num_colors, ".");
@@ -975,7 +975,7 @@ int main(int argc, char *argv[]) {
     printf("%f\n", err);
 
     //Generate a table csv file
-    //tableGen();
+    //tablegen();
 
     //Make a csv file with MSES for every file with the best config (.5, 1)
     genMSE();
