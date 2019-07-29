@@ -1,2 +1,2 @@
 # McQueen-Color-Quantization
-C code that reads in a ppm image file and outputs a quantized image.
+The manuscript associated with this repository is currently under review in Journal of Real-Time Image Processing. The source code of the proposed color quantization method will be available here upon acceptance.
