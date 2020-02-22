@@ -1,2 +1,4 @@
 # McQueen-Color-Quantization
-The manuscript associated with this repository is currently under review in Journal of Real-Time Image Processing. The source code of the proposed color quantization method will be available here upon acceptance.
+This repository contains the code and images required to reproduce the experiment's discussed in this paper published in the Journal of Real Time Image Processing: https://link.springer.com/article/10.1007/s11554-019-00914-6.
+
+Instructions for compiling and running the code are at the top of mkm.c.
